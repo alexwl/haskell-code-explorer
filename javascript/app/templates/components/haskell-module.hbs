@@ -1,0 +1,57 @@
+<div class="source-code-container"></div>
+{{#if declarations}}
+    <div class="declarations">
+        <div class="declarations-header">            
+            <div class="input-group">
+                {{input class="form-control" value=query placeholder="Identifier"}}<a class="hide-declarations" href="#" {{action "toggleShowDeclarations"}}>{{showDeclarationsLabel}}</a>
+            </div>
+        </div>
+        {{#if showDeclarations}}
+            <div id="declarations-content" class="declarations-content">                
+                <ul>                    
+                    {{#infinite-list containerElementId="declarations-content" elements=filteredDeclarations perPage=30 as |declaration|}}
+                        <li class="declaration">
+                            <div class="declaration">
+                                <a {{action "goToLine" declaration.lineNumber}} href="#"><span class="source-code-font">{{declaration.name}}{{#if declaration.declType}} :: {{type-signature-text components=declaration.declType.components}}{{/if}}</span>
+                                </a><span>{{#unless declaration.isExported}}<i>(not exported)</i>{{/unless}}</span>
+                            </div>
+                        </li>
+                    {{/infinite-list}}
+                </ul>
+            </div>
+        {{/if}}
+    </div>
+{{/if}}
+{{#info-window
+   targetElement=selectedIdentifier
+   isHoveredOverIdentifier=isHoveredOverIdentifier
+   hasSelectedExpression=hasSelectedExpression
+   containerElementId="right-panel" as |section|}}
+    {{#if (eq section "header")}}
+        {{#if hasSelectedExpression}}
+            <div>Selected expressions</div>
+        {{else}}
+            {{identifier-name
+              identifierInfo=identifierInfo
+              identifierOccurrence=identifierOccurrence
+              identifierElement=selectedIdentifier
+              currentPackageId=packageId
+              isBinder=identifierOccurrence.isBinder
+              currentLineNumber=currentLineNumber
+              findReferences=findReferences}}
+        {{/if}}
+    {{else}}
+        {{#unless hasSelectedExpression}}
+            {{identifier-info
+              identifierInfo=identifierInfo
+              identifierOccurrence=identifierOccurrence
+              identifiers=identifiers
+              currentLineNumber=currentLineNumber}}
+    {{else}}
+            {{expression-info
+              expressions=expressions
+              identifiers=identifiers
+              currentLineNumber=currentLineNumber}}
+        {{/unless}}
+    {{/if}}
+{{/info-window}}

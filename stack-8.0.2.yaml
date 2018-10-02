@@ -1,0 +1,7 @@
+resolver: lts-9.14
+packages:
+- '.'
+extra-deps:
+ - servant-0.12.1
+ - servant-server-0.12
+ - cabal-helper-0.8.0.2

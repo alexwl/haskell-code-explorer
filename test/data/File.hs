@@ -1,0 +1,21 @@
+1 File.hs
+2 File.hs
+3 File.hs
+4 File.hs
+5 File.hs
+6 File.hs
+7 File.hs
+#include "File1.hs"
+9 File.hs
+#if 0
+11 File.hs
+12 File.hs
+13 File.hs
+14 File.hs
+15 File.hs
+16 File.hs
+#endif
+18 File.hs
+19 File.hs
+#include "File3.hs"
+21 File.hs

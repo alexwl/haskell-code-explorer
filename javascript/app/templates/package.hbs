@@ -1,0 +1,57 @@
+<div class="flex-container">
+    <div class="package-header">
+        <span class="package-header-package-name">{{#link-to 'package' model}}{{model.id}}{{/link-to}}</span> 
+        <span class="package-header-input">
+            {{#input-with-autocomplete
+               onSubmit=(action 'searchIdentifier')
+               createSearchUrlFunction=createSearchUrlFunction
+               maxItems=10
+               selectItem=(action 'showIdentifier')
+               placeholder="Identifier" as |identifier|}}
+                <span class="source-code-font">{{identifier.demangledOccName}} :: {{type-signature-text components=identifier.idType.components}}</span>
+                <div class="module-name">
+                    {{#if identifier.locationInfo.modulePath}}
+                        {{identifier.locationInfo.modulePath}}
+                    {{else}}
+                        {{identifier.locationInfo.moduleName}}
+                    {{/if}}
+                </div>
+            {{/input-with-autocomplete}}
+        </span>
+        {{#if currentFile}}
+            <span class="package-header-filename">
+                {{currentFile}}
+            </span>
+        {{/if}}
+    </div>
+    <div class="package-content">
+        {{#resizable-panel class="left-panel" alsoResizeElementId="#right-panel" as |hide|}}
+            <div class="file-tree-container">
+                {{file-tree directoryTree=model.directoryTree openFile="openFile" currentFile=currentFile packageId=model.id hide=hide}}
+            </div>
+        {{/resizable-panel}}
+        <div id="right-panel" class="right-panel">
+            <div id="file-container" class="file-container">                
+                {{outlet}}                
+            </div>
+            {{#bottom-panel visible=bottomPanelVisible topPanelElementId="#file-container" containerElementId="#right-panel" as |section|}}
+                {{#if (eq section "header")}}
+                    References to <b><span class="source-code">{{occName}}</span></b> in <span class="source-code">{{packageId}}</span>
+                {{else}}
+                    {{#paginated-list url=referencesUrl as |files|}}
+                        <ul>
+                            {{#each files as |file|}}
+                                <li>
+                                    <div class="file-name"><a href="/package/{{packageId}}/show/{{file.name}}">{{file.name}}</a></div>
+                                    {{#each file.references as |reference|}}
+                                        <a class="source-code source-code-snippet" href="/package/{{packageId}}/show/{{file.name}}#L{{reference.idSrcSpan.line}}">{{{reference.sourceCodeHtml}}}</a>
+                                    {{/each}}
+                                </li>
+                            {{/each}}
+                        </ul>
+                    {{/paginated-list}}
+                {{/if}}
+            {{/bottom-panel}}       
+        </div>
+    </div>
+</div>

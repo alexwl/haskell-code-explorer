@@ -1,0 +1,12 @@
+<div class="info-window">
+    <div class="info-window-header">
+        <div class="info-window-options">
+            <a href="#" {{action "pin"}}>{{#if isPinned}}Unpin{{else}}Pin{{/if}}</a>
+            <a href="#" {{action "close"}}>Close</a>
+        </div>
+        {{yield "header"}}
+    </div>
+    <div class="info-window-content">
+        {{yield "body"}}
+    </div>
+</div>

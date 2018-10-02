@@ -1,0 +1,21 @@
+<div class="search-results-header">
+    Query : {{model.query}}
+</div>
+<div class="search-results-content">
+    {{#paginated-list url=model.url as |identifiers|}}    
+        <ul>
+            {{#each identifiers as |identifier|}}
+                <li class="search-result">                    
+                    <span class="source-code" >{{identifier.demangledOccName}} :: {{type-signature-text components=identifier.idType.components}}</span>
+                    <div><a href="#" onmouseup={{action "goToDefinition" identifier.locationInfo}}>Go to definition</a></div>
+                    <div class="identifier-module">
+                        {{#if identifier.locationInfo.modulePath}}
+                            Defined in <a href="/package/{{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}}/show/{{identifier.locationInfo.modulePath}}">{{identifier.locationInfo.modulePath}}</a>
+                        {{/if}}
+                    </div>
+                    <div>{{{identifier.doc}}}</div>
+                </li>
+            {{/each}}
+        </ul>
+    {{/paginated-list}}
+</div>

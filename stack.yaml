@@ -1,0 +1,5 @@
+resolver: lts-11.3
+packages:
+- '.'
+extra-deps:
+ - cabal-helper-0.8.0.2

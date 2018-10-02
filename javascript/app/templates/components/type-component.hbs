@@ -1,0 +1,3 @@
+{{#if (and expanded identifierInfo)}}({{/if}}
+<span class="source-code {{linkClass}}" onmouseup={{action "onmouseup"}}>{{occName}}</span>
+{{#if (and expanded identifierInfo)}} :: {{type-signature type=identifierInfo.idType identifiers=identifiers noExpand=true}}){{/if}}

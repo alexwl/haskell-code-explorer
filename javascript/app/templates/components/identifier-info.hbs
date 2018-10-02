@@ -1,0 +1,39 @@
+{{#if (or identifierInfo identifierOccurrence.idOccType)}}
+    <div class="identifier-info">
+        {{#if identifierInfo}}
+            {{#if isNaughtyRecSel}}
+                <i>This record selector can never be called because its type mentions a type variable that isn't in the result type of the constructor</i>
+            {{else}}
+                {{type-signature
+                  type=identifierInfo.idType
+                  identifiers=identifiers
+                  currentLineNumber=currentLineNumber}}
+            {{/if}}
+        {{/if}}
+        {{#if (and identifierInfo identifierOccurrence identifierOccurrence.idOccType)}}
+            <div style="height:10px"></div>
+        {{/if}}
+        {{#if (and identifierOccurrence identifierOccurrence.idOccType)}}
+            {{type-signature
+              type=identifierOccurrence.idOccType
+              identifiers=identifiers
+              currentLineNumber=currentLineNumber}}
+        {{/if}}
+        <div class="documentation">
+            {{{identifierInfo.doc}}}
+            {{{downloadedDocumentation}}}
+        </div>
+        {{#if identifierOccurrence.instanceResolution}}
+            <div style="height:10px"></div>
+        {{/if}}
+        <div>
+            {{#if identifierOccurrence.instanceResolution}}
+                {{instance-info
+                  instance=identifierOccurrence.instanceResolution
+                  identifiers=identifiers
+                  nestedLevel=0
+                  currentLineNumber=currentLineNumber}}
+            {{/if}}
+        </div>
+    </div>
+{{/if}}

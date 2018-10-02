@@ -1,0 +1,595 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+module HaskellCodeExplorer.PackageInfo
+  ( createPackageInfo
+  ) where
+
+import Control.DeepSeq(deepseq)
+import Control.Exception
+  ( IOException
+  , SomeAsyncException
+  , SomeException
+  , fromException
+  , throw
+  , try
+  )
+import Control.Monad (foldM, join, unless)
+import Control.Monad.Extra (findM)
+import Control.Monad.Logger
+  ( LoggingT(..)
+  , MonadLogger(..)
+  , MonadLoggerIO(..)
+  , logDebugN
+  , logErrorN
+  , logInfoN
+  )
+import qualified Data.ByteString as BS
+import qualified Data.HashMap.Strict as HM
+import Data.IORef (readIORef)
+import qualified Data.IntMap.Strict as IM
+import qualified Data.List as L
+import Data.Maybe (fromMaybe, isJust, maybeToList)
+import qualified Data.Set as S
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import Digraph (flattenSCCs)
+import Distribution.Helper
+  ( ChComponentName(..)
+  , ChEntrypoint(..)
+  , ChModuleName(..)
+  , components
+  , entrypoints
+  , ghcOptions
+  , mkQueryEnv
+  , packageId
+  , runQuery
+  , sourceDirs
+  )
+import DynFlags
+  ( DynFlags(..)
+  , GeneralFlag(..)
+  , GhcMode(..)
+  , WarnReason(..)
+  , gopt_set
+  , parseDynamicFlagsCmdLine
+  )
+import Exception (ExceptionMonad(..), ghandle)
+import GHC
+  ( GhcLink(..)
+  , HscTarget(..)
+  , LoadHowMuch(..)
+  , ModLocation(..)
+  , ModSummary(..)
+  , Severity
+  , SrcSpan
+  , getModuleGraph
+  , getSession
+  , getSessionDynFlags
+  , guessTarget
+  , load
+  , noLoc
+  , parseModule
+  , runGhcT
+  , setSessionDynFlags
+  , setTargets
+  , topSortModuleGraph
+  , typecheckModule
+  , moduleNameString
+  , moduleName  
+  )
+import GHC.Paths (libdir)
+import GhcMonad (GhcT(..), liftIO)
+import HaskellCodeExplorer.GhcUtils (isHsBoot,toText)
+import HaskellCodeExplorer.ModuleInfo (ModuleDependencies, createModuleInfo)
+import qualified HaskellCodeExplorer.Types as HCE
+import HscTypes (hsc_EPS, hsc_HPT)
+import Outputable (PprStyle, SDoc, neverQualify, showSDocForUser)
+import Packages (initPackages)
+import Prelude hiding (id)
+import System.Directory
+  ( doesFileExist
+  , doesFileExist
+  , findExecutable
+  , setCurrentDirectory
+  , getCurrentDirectory
+  , makeAbsolute
+  )
+import qualified System.Directory.Tree as DT
+import System.FilePath
+  ( (</>)
+  , addTrailingPathSeparator
+  , joinPath
+  , normalise
+  , replaceExtension
+  , splitPath
+  , takeExtension
+  , takeBaseName
+  , splitDirectories
+  )
+import System.Process (readProcess)
+
+createPackageInfo ::
+     FilePath -- ^ Path to a Cabal package
+  -> Maybe FilePath -- ^ Relative path to a dist directory
+  -> HCE.SourceCodePreprocessing -- ^ Before or after preprocessor
+  -> [String] -- ^ Options for GHC
+  -> [String] -- ^ Directories to ignore
+  -> LoggingT IO (HCE.PackageInfo HCE.ModuleInfo)
+createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreprocessing additionalGhcOptions ignoreDirectories = do
+  packageDirectoryAbsPath <- liftIO $ makeAbsolute packageDirectoryPath
+  currentDirectory <- liftIO getCurrentDirectory
+  liftIO $ setCurrentDirectory packageDirectoryAbsPath
+  distDir <-
+    case mbDistDirRelativePath of
+      Just path -> return $ packageDirectoryAbsPath </> path
+      Nothing -> findDistDirectory packageDirectoryAbsPath
+  let cabalHelperQueryEnv = mkQueryEnv packageDirectoryAbsPath distDir
+  ((packageName, packageVersion), compInfo) <-
+    liftIO $
+    runQuery
+      cabalHelperQueryEnv
+      ((,) <$> packageId <*>
+       (zip3 <$> components ((,) <$> ghcOptions) <*>
+        components ((,) <$> entrypoints) <*>
+        components ((,) <$> sourceDirs)))
+  let currentPackageId = HCE.PackageId (T.pack packageName) packageVersion
+  logInfoN $ T.append "Indexing " $ HCE.packageIdToText currentPackageId
+  let buildComponents =
+        L.map
+          (\((options, compName), (entrypoint, _), (srcDirs, _)) ->
+             ( chComponentNameToComponentId compName
+             , options
+             , chEntrypointsToModules entrypoint
+             , srcDirs
+             , chComponentNameToComponentType compName)) .
+        L.sortBy
+          (\((_, compName1), _, _) ((_, compName2), _, _) ->
+             compare compName1 compName2) $
+        compInfo
+      libSrcDirs =
+        concatMap (\(_, _, _, srcDirs, _) -> srcDirs) .
+        filter (\(_, _, _, _, compType) -> HCE.isLibrary compType) $
+        buildComponents
+  (indexedModules, (_fileMapResult, _defSiteMapResult, modNameMapResult)) <-
+    foldM
+      (\(modules, (fileMap, defSiteMap, modNameMap)) (compId, options, (mbMain, moduleNames), srcDirs, _) -> do
+         mbMainPath <-
+           case mbMain of
+             Just mainPath ->
+               liftIO $
+               findM doesFileExist $
+               mainPath :
+               map (\srcDir -> normalise $ srcDir </> mainPath) srcDirs
+             Nothing -> return Nothing
+         (modules', (fileMap', defSiteMap', modNameMap')) <-
+           indexBuildComponent
+             sourceCodePreprocessing
+             currentPackageId
+             compId
+             (fileMap, defSiteMap, modNameMap)
+             srcDirs
+             libSrcDirs
+             (options ++ additionalGhcOptions)
+             (maybe moduleNames (: moduleNames) mbMainPath)
+         return (modules ++ modules', (fileMap', defSiteMap', modNameMap')))
+      ([], (HM.empty, HM.empty, HM.empty))
+      buildComponents
+  let modId = HCE.id :: HCE.ModuleInfo -> HCE.HaskellModulePath
+      moduleMap =
+        HM.fromList . map (\modInfo -> (modId modInfo, modInfo)) $
+        indexedModules
+      references = L.foldl' addReferencesFromModule HM.empty indexedModules
+      moduleId = HCE.id :: HCE.ModuleInfo -> HCE.HaskellModulePath
+      topLevelIdentifiersTrie =
+        L.foldl' addTopLevelIdentifiersFromModule HCE.emptyTrie .
+        L.filter (not . isHsBoot . moduleId) $
+        indexedModules
+  directoryTree <-
+    liftIO $
+    buildDirectoryTree
+      packageDirectoryAbsPath
+      ignoreDirectories
+      (\path -> HM.member (HCE.HaskellModulePath . T.pack $ path) moduleMap)
+  liftIO $ setCurrentDirectory currentDirectory
+  return
+    HCE.PackageInfo
+      { id = currentPackageId
+      , moduleMap = moduleMap
+      , moduleNameMap = modNameMapResult
+      , directoryTree = directoryTree
+      , externalIdOccMap = references
+      , externalIdInfoMap = topLevelIdentifiersTrie
+      }
+  where
+    chEntrypointsToModules :: ChEntrypoint -> (Maybe String, [String])
+    chEntrypointsToModules (ChLibEntrypoint modules otherModules signatures) =
+      ( Nothing
+      , L.map chModuleToString modules ++
+        L.map chModuleToString otherModules ++ L.map chModuleToString signatures)
+    chEntrypointsToModules (ChExeEntrypoint mainModule _otherModules) =
+      (Just mainModule, [])
+    chEntrypointsToModules ChSetupEntrypoint = (Nothing, [])
+    chModuleToString :: ChModuleName -> String
+    chModuleToString (ChModuleName n) = n
+    chComponentNameToComponentType :: ChComponentName -> HCE.ComponentType
+    chComponentNameToComponentType ChSetupHsName = HCE.Setup
+    chComponentNameToComponentType ChLibName = HCE.Lib
+    chComponentNameToComponentType (ChSubLibName name) =
+      HCE.SubLib $ T.pack name
+    chComponentNameToComponentType (ChFLibName name) = HCE.FLib $ T.pack name
+    chComponentNameToComponentType (ChExeName name) = HCE.Exe $ T.pack name
+    chComponentNameToComponentType (ChTestName name) = HCE.Test $ T.pack name
+    chComponentNameToComponentType (ChBenchName name) = HCE.Bench $ T.pack name
+    chComponentNameToComponentId :: ChComponentName -> HCE.ComponentId
+    chComponentNameToComponentId ChLibName = HCE.ComponentId "lib"
+    chComponentNameToComponentId (ChSubLibName name) =
+      HCE.ComponentId . T.append "sublib-" . T.pack $ name
+    chComponentNameToComponentId (ChFLibName name) =
+      HCE.ComponentId . T.append "flib-" . T.pack $ name
+    chComponentNameToComponentId (ChExeName name) =
+      HCE.ComponentId . T.append "exe-" . T.pack $ name
+    chComponentNameToComponentId (ChTestName name) =
+      HCE.ComponentId . T.append "test-" . T.pack $ name
+    chComponentNameToComponentId (ChBenchName name) =
+      HCE.ComponentId . T.append "bench-" . T.pack $ name
+    chComponentNameToComponentId ChSetupHsName = HCE.ComponentId "setup"
+     
+buildDirectoryTree :: FilePath -> [FilePath] -> (FilePath -> Bool) -> IO HCE.DirTree
+buildDirectoryTree path ignoreDirectories isHaskellModule = do
+  (_dir DT.:/ tree) <- DT.readDirectoryWith (const . return $ ()) path
+  -- Tuple up the complete file path with the file contents, by building up the path,
+  -- trie-style, from the root. The filepath will be relative to "anchored" directory.
+  let treeWithPaths = DT.zipPaths ("" DT.:/ DT.filterDir (not . ignore) tree)
+  return $ toDirTree (removeTopDir . fst <$> treeWithPaths)
+  where
+    ignore :: DT.DirTree a -> Bool
+    ignore (DT.Dir dirName _)
+      | "." `L.isPrefixOf` dirName = True
+      | dirName == "dist" = True
+      | dirName == "dist-newstyle" = True
+      | dirName == "tmp" = True
+      | otherwise = dirName `elem` ignoreDirectories
+    ignore (DT.Failed _ _) = True
+    ignore _ = False
+    removeTopDir :: FilePath -> FilePath
+    removeTopDir p =
+      case splitPath p of
+        _x:xs -> joinPath xs
+        [] -> ""
+    toDirTree :: DT.DirTree FilePath -> HCE.DirTree
+    toDirTree (DT.Dir name contents) =
+      HCE.Dir name (map toDirTree . filter (not . DT.failed) $ contents)
+    toDirTree (DT.File name filePath) =
+      HCE.File name filePath (isHaskellModule filePath)
+    toDirTree (DT.Failed name err) =
+      HCE.File (name ++ " : " ++ show err) "" False
+        
+addTopLevelIdentifiersFromModule ::
+     HCE.Trie Char HCE.ExternalIdentifierInfo
+  -> HCE.ModuleInfo
+  -> HCE.Trie Char HCE.ExternalIdentifierInfo
+addTopLevelIdentifiersFromModule trieIdInfo HCE.ModuleInfo {..} =
+  L.foldl'
+    (\trie idInfo@(HCE.ExternalIdentifierInfo HCE.IdentifierInfo {..}) ->
+       HCE.insertToTrie S.insert (T.unpack demangledOccName) idInfo trie)
+    trieIdInfo
+    externalIds
+  
+addReferencesFromModule ::     
+     HM.HashMap HCE.ExternalId (S.Set HCE.IdentifierSrcSpan)
+  -> HCE.ModuleInfo
+  -> HM.HashMap HCE.ExternalId (S.Set HCE.IdentifierSrcSpan)
+addReferencesFromModule references modInfo@HCE.ModuleInfo {..} =
+  eachIdentifierOccurrence
+    references
+    modInfo
+    (\occMap lineNumber startCol endCol occ ->
+       let mbIdExternalId =
+             join $
+             HCE.externalId <$>
+             maybe
+               Nothing
+               (`HM.lookup` idInfoMap)
+               (HCE.internalId (occ :: HCE.IdentifierOccurrence))
+           idSrcSpan =
+             HCE.IdentifierSrcSpan
+               { modulePath = id
+               , line = lineNumber
+               , startColumn = startCol
+               , endColumn = endCol
+               }
+        in case mbIdExternalId of
+             Just externalId ->
+               HM.insertWith S.union externalId (S.singleton idSrcSpan) occMap
+             Nothing -> occMap)
+
+findDistDirectory :: FilePath -> LoggingT IO FilePath
+findDistDirectory packagePath = do
+  hasStackYaml <- liftIO $ doesFileExist (packagePath </> "stack.yaml")
+  mbStackExecutable <- liftIO $ findExecutable "stack"
+  let defaultDistDir = packagePath </> "dist"
+  case (hasStackYaml, mbStackExecutable) of
+    (True, Just stack) -> do
+      let removeEndOfLine str
+            | null str = str
+            | otherwise = init str
+      eitherDistDir :: (Either IOException String) <-
+        liftIO .
+        try . fmap removeEndOfLine . readProcess stack ["path", "--dist-dir"] $
+        ""
+      case eitherDistDir of
+        Right distDir -> do
+          logDebugN $ T.append "Stack dist directory : " $ T.pack distDir
+          return distDir
+        Left exception -> do
+          logDebugN $
+            T.append
+              "Error while executing \"stack path --dist-dir\" : "
+              (T.pack . show $ exception)
+          return defaultDistDir
+    (False, _) -> do
+      logDebugN
+        "stack.yaml is not found in the package directory. Using default dist directory."
+      return defaultDistDir
+    (_, Nothing) -> do
+      logDebugN "stack executable is not found. Using default dist directory."
+      return defaultDistDir
+      
+eachIdentifierOccurrence ::
+     forall a.
+     a
+  -> HCE.ModuleInfo
+  -> (a -> IM.Key -> Int -> Int -> HCE.IdentifierOccurrence -> a)
+  -> a
+eachIdentifierOccurrence accumulator HCE.ModuleInfo {..} f =
+  IM.foldlWithKey'
+    (\acc lineNumber occurences ->
+       L.foldl'
+         (\a ((startCol, endCol), occ) -> f a lineNumber startCol endCol occ)
+         acc
+         occurences)
+    accumulator
+    idOccMap
+
+instance ExceptionMonad (LoggingT IO) where
+  gcatch act h =
+    LoggingT $ \logFn ->
+      runLoggingT act logFn `gcatch` \e -> runLoggingT (h e) logFn
+  gmask f =
+    LoggingT $ \logFn ->
+      gmask $ \io_restore ->
+        let g_restore (LoggingT m) = LoggingT $ \lf -> io_restore (m lf)
+         in runLoggingT (f g_restore) logFn
+
+instance MonadLoggerIO (GhcT (LoggingT IO)) where
+  askLoggerIO = GhcT $ const askLoggerIO
+
+instance MonadLogger (GhcT (LoggingT IO)) where
+  monadLoggerLog loc source level =
+    GhcT . const . monadLoggerLog loc source level
+
+gtrySync :: (ExceptionMonad m) => m a -> m (Either SomeException a)
+gtrySync action = ghandleSync (return . Left) (fmap Right action)
+
+ghandleSync :: (ExceptionMonad m) => (SomeException -> m a) -> m a -> m a
+ghandleSync onError =
+  ghandle
+    (\ex ->
+       case fromException ex of
+         Just (asyncEx :: SomeAsyncException) -> throw asyncEx
+         _ -> onError ex)
+    
+indexBuildComponent ::
+     HCE.SourceCodePreprocessing -- ^ Before or after preprocessor
+  -> HCE.PackageId -- ^ Current package id
+  -> HCE.ComponentId -- ^ Current component id
+  -> ModuleDependencies -- ^ Already indexed modules
+  -> [FilePath] -- ^ Src dirs
+  -> [FilePath] -- ^ Src dirs of libraries
+  -> [String] -- ^ Command-line options for GHC
+  -> [String] -- ^ Modules to compile
+  -> LoggingT IO ([HCE.ModuleInfo],ModuleDependencies)
+indexBuildComponent sourceCodePreprocessing currentPackageId componentId deps@(fileMap, defSiteMap, modNameMap) srcDirs libSrcDirs options modules = do
+  let onError ex = do
+        logErrorN $
+          T.concat
+            [ "Error while indexing component "
+            , HCE.getComponentId componentId
+            , " : "
+            , T.pack . show $ ex
+            ]
+        return ([], deps)
+  ghandleSync onError $
+    runGhcT (Just libdir) $ do
+      logDebugN (T.append "Component id : " $ HCE.getComponentId componentId)
+      logDebugN (T.append "Modules : " $ T.pack $ show modules)
+      logDebugN (T.append "GHC options : " $ T.pack $ show options)
+      flags <- getSessionDynFlags
+      (flags', _, _) <- parseDynamicFlagsCmdLine flags (L.map noLoc options)
+      (flags'', _) <- liftIO $ initPackages flags'
+      logFn <- askLoggerIO
+      let logAction ::
+               DynFlags
+            -> WarnReason
+            -> Severity
+            -> SrcSpan
+            -> Outputable.PprStyle
+            -> SDoc
+            -> IO ()
+          logAction fs _reason _severity srcSpan _stype msg =
+            runLoggingT
+              (logDebugN
+                 (T.append "GHC message : " $
+                  T.pack $
+                  showSDocForUser fs neverQualify msg ++
+                  " , SrcSpan : " ++ show srcSpan))
+              logFn
+          mbTmpDir =
+            case hiDir flags'' of
+              Just buildDir ->
+                Just $ buildDir </> (takeBaseName buildDir ++ "-tmp")
+              Nothing -> Nothing
+      _ <-
+        setSessionDynFlags $
+        L.foldl'
+          gopt_set
+          (flags''
+             { hscTarget = HscAsm
+             , ghcLink = LinkInMemory
+             , ghcMode = CompManager
+             , log_action = logAction
+             , importPaths = importPaths flags'' ++ maybeToList mbTmpDir
+             })
+          [Opt_Haddock]
+      targets <- mapM (`guessTarget` Nothing) modules
+      setTargets targets
+      _ <- load LoadAllTargets
+      modGraph <- getModuleGraph
+      let topSortMods = flattenSCCs (topSortModuleGraph False modGraph Nothing)
+          buildDir =
+            addTrailingPathSeparator . normalise . fromMaybe "" . hiDir $
+            flags''
+          pathsModuleName =
+            "Paths_" ++
+            map
+              (\c ->
+                 if c == '-'
+                   then '_'
+                   else c)
+              (T.unpack (HCE.name (currentPackageId :: HCE.PackageId)))      
+      (modSumWithPath, modulesNotFound) <-
+        (\(mods, notFound) ->
+           ( L.reverse .
+             L.foldl'
+               (\acc (mbPath, modSum) ->
+                  case mbPath of
+                    Just path
+                      | not $ HM.member path defSiteMap -> (path, modSum) : acc
+                    _ -> acc)
+               [] $
+             mods
+           , map snd notFound)) .
+        L.partition (\(mbPath, _) -> isJust mbPath) <$>
+        mapM
+          (\modSum ->
+             liftIO $
+             (, modSum) <$>
+             findHaskellModulePath buildDir (srcDirs ++ libSrcDirs) modSum)
+          (filter
+             (\modSum ->
+                pathsModuleName /=
+                (moduleNameString . moduleName $ ms_mod modSum))
+             topSortMods)      
+      unless (null modulesNotFound) $
+        logErrorN $
+        T.append
+          "Cannot find module path : "
+          (toText flags'' $ map ms_mod modulesNotFound)
+      foldM
+        (\(indexedModules, (fileMap', defSiteMap', modNameMap')) (modulePath, modSum) -> do
+           result <-
+             indexModule
+               sourceCodePreprocessing
+               componentId
+               currentPackageId
+               flags''
+               (fileMap', defSiteMap', modNameMap')
+               (modulePath, modSum)
+           case result of
+             Right (modInfo, (fileMap'', defSiteMap'', modNameMap'')) ->
+               return
+                 ( modInfo : indexedModules
+                 , (fileMap'', defSiteMap'', modNameMap''))
+             Left exception -> do
+               logErrorN $
+                 T.concat
+                   [ "Error while indexing "
+                   , T.pack . show $ modulePath
+                   , " : "
+                   , T.pack . show $ exception
+                   ]
+               return (indexedModules, (fileMap', defSiteMap', modNameMap')))
+        ([], (fileMap, defSiteMap, modNameMap))
+        modSumWithPath
+          
+findHaskellModulePath ::
+     FilePath -> [FilePath] -> ModSummary -> IO (Maybe HCE.HaskellModulePath)
+findHaskellModulePath buildDir srcDirs modSum =
+  case normalise <$> (ml_hs_file . ms_location $ modSum) of
+    Just modulePath ->
+      let toHaskellModulePath = return . Just . HCE.HaskellModulePath . T.pack
+          removeTmpDir path =
+            case splitDirectories path of
+              parent:rest ->
+                if "-tmp" `L.isSuffixOf` parent
+                  then joinPath rest
+                  else path
+              _ -> path
+       in case removeTmpDir <$> L.stripPrefix buildDir modulePath of
+            -- File is in the build directory        
+            Just path
+              | takeExtension path == ".hs-boot" -> do
+                let possiblePaths = path : map (</> path) srcDirs
+                mbFoundPath <- findM doesFileExist possiblePaths
+                case mbFoundPath of
+                  Just p -> toHaskellModulePath p
+                  _ -> return Nothing
+              | takeExtension path == ".hs" -> do
+                let paths =
+                      map
+                        (replaceExtension path)
+                        HCE.haskellPreprocessorExtensions
+                    possiblePaths =
+                      paths ++
+                      concatMap (\srcDir -> map (srcDir </>) paths) srcDirs
+                mbFoundPath <- findM doesFileExist possiblePaths
+                case mbFoundPath of
+                  Just p -> toHaskellModulePath p
+                  _ -> return Nothing
+              | otherwise -> return Nothing
+            Nothing -> toHaskellModulePath modulePath
+    Nothing -> return Nothing
+
+indexModule ::
+     HCE.SourceCodePreprocessing
+  -> HCE.ComponentId
+  -> HCE.PackageId
+  -> DynFlags
+  -> ModuleDependencies
+  -> (HCE.HaskellModulePath, ModSummary)
+  -> GhcT (LoggingT IO) (Either SomeException ( HCE.ModuleInfo
+                                              , ModuleDependencies))
+indexModule sourceCodePreprocessing componentId currentPackageId flags deps (modulePath, modSum) =
+  gtrySync $ do
+    logDebugN (T.append "Indexing " $ HCE.getHaskellModulePath modulePath)
+    parsedModule <- parseModule modSum
+    typecheckedModule <- typecheckModule parsedModule
+    hscEnv <- getSession
+    externalPackageState <- liftIO . readIORef . hsc_EPS $ hscEnv
+    originalSourceCode <-
+      liftIO $
+      T.replace "\t" "        " . TE.decodeUtf8 <$>
+      BS.readFile (T.unpack . HCE.getHaskellModulePath $ modulePath)
+    let (modInfo, (fileMap', exportMap', moduleNameMap'), typeErrors) =
+          createModuleInfo
+            deps
+            ( flags
+            , typecheckedModule
+            , hsc_HPT hscEnv
+            , externalPackageState
+            , modSum)
+            modulePath
+            currentPackageId
+            componentId
+            (originalSourceCode, sourceCodePreprocessing)
+    unless (null typeErrors) $
+      logInfoN $ T.append "Type errors : " $ T.pack $ show typeErrors
+    deepseq modInfo $ return (modInfo, (fileMap', exportMap', moduleNameMap'))

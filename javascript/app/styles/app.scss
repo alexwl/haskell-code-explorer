@@ -1,0 +1,555 @@
+@import "ember-cli-bootstrap-4/bootstrap";
+
+body {
+    font-size:14px;
+}
+
+a, a:visited, a:focus, a:active, a:hover{
+    outline:0 none;
+}
+
+input:focus{
+    outline:none;
+}
+
+p {
+    margin-top:1rem;
+}
+
+.ember-radio-button {
+    cursor:pointer;
+}
+
+label {
+    margin-bottom:0px;
+}
+
+ul {
+    list-style: none;
+    padding : 0;
+}
+
+ol {
+    list-style: none;
+    padding : 0;
+}
+
+li {
+    list-style: none;
+}
+
+.documentation {
+    margin-top:10px;
+    li {
+        list-style: disc outside none;                
+    }
+    ul {
+        padding-left:15px;
+    }
+    ol {
+        padding-left:15px;
+    }    
+}
+
+.flex-container {
+    display:flex;
+    flex-direction:column;
+    height:100%;
+    width:100%;
+}
+
+.absolute-container {
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+}
+
+.header {
+    flex: none;
+    padding:5px;
+    img {        
+        float:left;
+    }
+}
+
+.header-item {
+    display:inline-block;
+    margin-top:5px;
+    font-size : 1rem;
+    margin-right: 40px;
+    white-space: nowrap;
+    @media screen and (max-width: 700px) {
+        margin-right: 10px;
+        margin-left: 10px;
+    }
+}
+
+.content {
+    flex: auto;
+    position:relative;
+    overflow:auto;
+}
+
+.packages {
+    flex:auto;
+    overflow-y:auto;
+    li {
+        margin-bottom: 5px;
+    }
+    a {
+        margin-right:5px;
+    }
+}
+
+.package-content {
+    flex:auto;
+    position:relative;
+}
+
+.package-header {
+    padding:5px;
+}
+
+.package-header-input {
+    display:inline-block;
+    margin-right:10px;
+}
+
+.package-modules {
+    margin-left:10px;
+}
+
+.module-name {
+    font-size:0.7rem;
+}
+
+.package-search-form {
+    max-width:500px;
+    margin-bottom:10px;
+    margin-top:20px;
+}
+
+.package-header-filename {    
+    white-space: nowrap;
+}
+
+.package-header-package-name {
+    margin-right:10px;
+    font-size:17px;
+}
+
+.module-search-input {
+    max-width:500px;
+    margin:5px;
+}
+
+ul.modules {
+    position:absolute;
+    top:50px;
+    bottom:0px;
+    margin:0px;
+    padding-left:15px;
+    left:0px;
+    right:0px;
+    display:flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    li {
+        margin-right: 10px;
+    }
+    overflow-x:auto;
+}
+
+.left-panel {
+    position: absolute;
+    bottom : 0;
+    top : 0;
+    left : 0;
+    width : 300px;
+}
+
+.show-left-panel-button {
+    position:absolute;
+    top:0px;
+    right:-20px;
+    z-index:2;    
+    width:20px;
+    height:20px;    
+    text-align:center;
+    vertical-align:middle;
+    a {
+        text-decoration:none;        
+    }
+    opacity:0.6;
+    display:none;
+}
+
+.show-left-panel-button:hover {
+    opacity:1;
+    cursor:pointer;
+}
+
+.hide-file-tree {
+    position: relative;
+    top: 8px;
+    left: 3px;
+}
+
+.hide-declarations {
+    margin:7px;
+}
+
+.right-panel {
+    position: absolute;
+    bottom : 0;
+    top : 0;
+    right : 0;
+    left : 300px;
+    overflow-x: auto;
+    overflow-y: auto;    
+}
+
+.file-tree-container { 
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: absolute;
+    bottom : 0;
+    top : 0;
+    left: 0;
+    right: 0;
+}
+
+.file-container {
+    position: absolute;
+    bottom : 0px;
+    top : 0;
+    right : 0;
+    left : 0;
+    overflow-x: auto;
+    overflow-y: auto;    
+}
+
+.bottom-panel {
+    display:none;
+    position: absolute;
+    bottom : 0;
+    right : 0;
+    left : 0;
+    overflow-x: auto;
+    overflow-y: auto;    
+    z-index:4;
+}
+
+.bottom-panel-header {
+    position: absolute;
+    top: 0;
+    right : 0;
+    left : 0;
+    height: 35px;
+    padding: 5px;    
+}
+
+.bottom-panel-content {
+    position: absolute;
+    bottom : 0;
+    top : 35px;
+    right : 0;
+    left : 0;
+    overflow-x: auto;
+    overflow-y: auto;    
+}
+
+.bottom-panel-header-options {
+    float:right;
+}
+
+.bottom-panel-header-content {
+    white-space:nowrap;
+}
+
+.highlighted-identifier {    
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px #B4B4B4;    
+}
+
+.identifier {
+    cursor:pointer;
+}
+
+td.line-number {
+    cursor:pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    width: 1%;
+    min-width: 60px;
+    text-align: left;
+    padding-left:10px;
+    opacity: 0.8;
+}
+
+td.line-number:hover {
+    opacity : 1;
+}
+
+td.line-content {
+    padding-left:5px;
+
+}
+
+$source-code-font:Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
+
+.source-code {    
+    font-family: $source-code-font;
+    white-space:pre;
+    line-height:1.25;
+    tab-size: 4;
+}
+
+.break-word {
+    word-wrap:break-word;
+}
+
+code,pre {
+    font-family: $source-code-font !important;
+    white-space:pre;
+    line-height:1.25;
+    font-size:100%;
+    color : unset;
+}
+
+.source-code-font {
+    font-family: $source-code-font;    
+    line-height:1.25;
+}
+
+.source-code-snippet {
+    padding: 4px;    
+    text-decoration:none !important;
+    display:block;
+}
+
+.source-code-snippet > b {
+    border-radius: 3px;
+    border: 1px solid #B4B4B4;
+    margin: -1px;
+}
+
+.source-code-snippet:hover {
+    text-decoration:none;
+}
+
+.source-code-container {
+    margin : 5px;
+}
+
+.declarations {
+    position:fixed;
+    top:150px;
+    right:15px;
+    width: 450px;    
+    z-index:1;
+    div {
+        margin : 5px;
+    }
+}
+
+.declarations-header {
+    opacity:0.9;
+    height:50px; 
+}
+
+.declarations-content {
+    opacity:0.9;
+    position:absolute;
+    top:50px;
+    left:0px;
+    right:0px;
+    max-height:500px;
+    overflow-y:auto;
+    overflow-x:hidden;    
+}
+
+@media screen and (max-width: 1500px)  {
+    .declarations {
+        display:none;
+    }
+}
+
+.info-window-container {
+    position:absolute;
+    width:750px;
+    z-index:10;
+}
+
+.info-window-header {    
+    margin:5px;
+    width: 100%;
+    cursor: move;
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;    
+}
+
+.info-window-content {    
+    max-height:200px;
+    overflow-x:auto;
+    overflow-y:auto;    
+}
+
+.info-window-options {
+    margin-right:10px;
+    margin-left:10px;
+    float:right;    
+}
+
+           
+.ui-draggable-dragging .info-window-header {
+    cursor: grabbing;
+    cursor: -moz-grabbing;
+    cursor: -webkit-grabbing;
+}
+
+span.link {
+    cursor:pointer;
+    white-space:nowrap;
+}
+
+span.link:hover {
+    text-decoration:underline;
+}
+
+.ui-resizable-n {
+    height: 13px !important;;
+}
+
+.ui-resizable-w {
+    width: 13px !important;;
+}
+
+.type-info {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.type-component {
+    display: inline-block;
+}
+
+dd {
+    margin-left: 1em;
+}
+
+.autocomplete-container {
+    position:absolute;
+    z-index:10;
+    display:none;
+    left:0px;
+}
+
+ul.autocomplete-items {
+    li {
+        cursor:pointer;
+        max-height: 200px;
+        overflow: hidden;
+    }
+}
+
+.autocomplete-item {
+    padding:5px;
+}
+
+.file-tree-header {
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:50px;
+    margin:5px;
+}
+
+.file-tree-content {
+    position:absolute;
+    top:50px;
+    left:0;
+    right:0;
+    bottom:0;
+    overflow-x:auto;
+    overflow-x:auto;
+}
+
+button {
+    color:black;
+}
+
+.paginated-list-header {
+    position:absolute;
+    top:0px;
+    left:0px;
+    right:0px;
+    height:40px;
+    padding: 5px;
+    white-space:nowrap;
+}
+
+.paginated-list-content {
+    position:absolute;
+    top:40px;
+    bottom:0px;
+    left:0px;
+    right:0px;
+    overflow:auto;
+}
+
+.pagination-button {
+    font-size: 10px;
+}
+
+.search-results-header {
+    position:absolute;
+    top:0px;
+    left:0px;
+    right:0px;
+    height:35px;
+    padding: 5px;
+    white-space:nowrap;
+}
+
+.search-results-content {
+    position:absolute;
+    top:35px;
+    bottom:0px;
+    left:0px;
+    right:0px;
+}
+
+.search-result {
+    padding:5px;
+}
+
+.expression {
+    margin-bottom:15px;
+}
+
+.expressions {
+    margin:5px;
+}
+
+.file-name {
+    margin-left:5px;
+}
+
+.identifier-info {
+    margin:5px;
+}
+
+.identifier-module {
+    margin-top:10px;
+}
+
+.identifier-menu-item {
+    margin-right:10px;
+}

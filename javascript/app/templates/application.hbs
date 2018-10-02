@@ -1,0 +1,26 @@
+<div class="absolute-container">
+    <div class="flex-container">
+        <div class="header">
+            <img src="/assets/haskell.ico">
+            <div class="container">
+                <span class="header-item">{{#link-to 'packages'}}Haskell packages{{/link-to}}</span>
+                <span class="header-item"><a target="_blank" href="https://github.com/alexwl/haskell-code-explorer">About</a></span>
+                <span class="header-item">
+                    {{#each themes as |theme|}}
+                        {{#radio-button
+                           value=theme.id
+                           groupValue=currentTheme
+                           changed="themeChanged"}}
+                            <span>{{theme.name}}</span>
+                        {{/radio-button}}
+                    {{/each}}
+                </span>
+            </div>
+        </div>
+        <div class="content">
+            <div class="absolute-container">
+                {{outlet}}
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,12 @@
+<div class="package-modules">
+    <div class="module-search-input">
+        {{input class="form-control" type="text" value=query placeholder="Module name"}}        
+    </div>    
+    <ul class="modules">
+        {{#each modulesFiltered as |module|}}
+            <li>
+                <a href="/package/{{model.id}}/show/{{module}}">{{module}}</a>
+            </li>
+        {{/each}}
+    </ul>    
+</div>

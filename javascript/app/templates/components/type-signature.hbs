@@ -1,0 +1,10 @@
+{{!-- No newlines to get rid of spaces between spans --}}
+{{#each components as |typeComponent|}}{{#if (eq typeComponent.tag "Text")}}<span class="source-code">{{typeComponent.contents}}</span>{{else}}{{type-component occName=typeComponent.name internalId=typeComponent.internalId identifiers=identifiers currentLineNumber=currentLineNumber}}{{/if}}{{/each}}
+{{#unless noExpand}}
+    {{#if type.componentsExpanded}}
+        <div style="margin-top:5px">
+            <button class="btn btn-outline-secondary btn-sm" {{action "toggleExpandTypeSynonyms"}}>{{expandTypeSynonymsLabel}}
+            </button>
+        </div>
+    {{/if}}
+{{/unless}}

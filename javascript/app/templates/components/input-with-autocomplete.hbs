@@ -1,0 +1,19 @@
+<div class="input-group">
+    {{input class="form-control search-input" value=query placeholder=placeholder}}
+    <div class="autocomplete-container">
+        {{# if items}}
+            <ul class="autocomplete-items">
+                {{#each items as |item index|}}
+                    <li class="{{if (eq index highlightedItemIndex) "highlighted"}}" onclick={{action "goToDefinition" item}}>
+                        <div class="autocomplete-item">
+                            {{yield item}}
+                        </div>
+                    </li>
+                {{/each}}
+            </ul>
+        {{/if}}
+    </div>
+    <div class="input-group-append">
+        <button id="search-input" class="btn btn-outline-secondary" {{action "onSubmit" query}}>Search</button>
+    </div>
+</div>

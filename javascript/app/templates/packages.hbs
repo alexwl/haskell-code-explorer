@@ -1,0 +1,26 @@
+<div class="flex-container container">
+    <div>        
+        <!-- <p class="lead"><b>Haskell code explorer</b>  </p> -->
+        <div class="package-search-form">
+            {{input class="form-control" type="text" value=query placeholder="Package name"}}
+            <span>Number of packages : {{packages.length}}</span>
+        </div>
+    </div>
+    <div id="packages" class="packages">
+        <ul>
+            {{#infinite-list containerElementId="packages" elements=packages perPage=80 as |package|}}
+                <li>
+                {{#each package.versions as |version index|}}
+                    {{#link-to 'package' (concat package.name "-" version)}}
+                        {{#if (gt index 0)}}
+                            {{version}}
+                        {{else}}
+                            {{package.name}}-{{version}}
+                        {{/if}}
+                    {{/link-to}}
+                {{/each}}
+                </li>
+            {{/infinite-list}}
+        </ul>
+    </div>
+</div>

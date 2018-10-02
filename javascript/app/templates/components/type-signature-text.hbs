@@ -1,0 +1,2 @@
+{{!-- No newlines to get rid of spaces between spans --}}
+{{#each components as |typeComponent|}}{{#if (eq typeComponent.tag "Text")}}{{typeComponent.contents}}{{else}}{{typeComponent.name}}{{/if}}{{/each}}

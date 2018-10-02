@@ -1,0 +1,10 @@
+{{#if instance}}
+    <div style={{style}}>
+        <span class="source-code-font">
+            instance {{type-signature type=instance.instanceType identifiers=identifiers currentLineNumber=currentLineNumber noExpand=true}}</span>
+        (<span class="link" onclick={{action "goToDefinition"}}>Go to definition</span>)
+        {{#each instance.instances as |inst|}}
+            {{instance-info instance=inst identifiers=identifiers nestedLevel=nextNestedLevel currentLineNumber=currentLineNumber}}
+        {{/each}}
+    </div>
+{{/if}}

@@ -1,0 +1,9 @@
+# stack build haskell-code-explorer:haskell-code-server --stack-yaml=stack-8.4.3.yaml
+resolver: lts-12.4
+packages:
+- '.'
+allow-newer: true
+extra-deps:
+  - cabal-helper-0.8.1.0
+  - cabal-plan-0.3.0.0
+  

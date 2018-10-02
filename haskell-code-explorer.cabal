@@ -1,0 +1,137 @@
+name:                haskell-code-explorer
+version:             0.1.0.0
+synopsis:            Web application for exploring and understanding Haskell codebases
+Category:            GHC,Web
+description:         Please see README.md
+license:             MIT
+license-file:        LICENSE
+author:              Alexey Kiryushin
+maintainer:          alexey.a.kiryushin@gmail.com
+build-type:          Simple
+cabal-version:       >=1.20
+
+library
+  default-language: Haskell2010
+  exposed-modules: HaskellCodeExplorer.PackageInfo
+                 , HaskellCodeExplorer.ModuleInfo
+                 , HaskellCodeExplorer.Types
+                 , HaskellCodeExplorer.Preprocessor
+                 , HaskellCodeExplorer.GhcUtils
+                 , HaskellCodeExplorer.AST.RenamedSource
+                 , HaskellCodeExplorer.AST.TypecheckedSource
+  hs-source-dirs: src
+  ghc-options:   -Wall -O2 -funbox-strict-fields 
+  build-depends: IntervalMap
+               , aeson
+               , attoparsec
+               , base
+               , blaze-html
+               , deepseq
+               , bytestring
+               , cabal-helper
+               , cereal
+               , containers
+               , directory
+               , directory-tree
+               , filemanip
+               , filepath
+               , ghc
+               , ghc-paths
+               , hashable
+               , haddock-library
+               , mtl
+               , process
+               , syb
+               , uniplate
+               , text
+               , unordered-containers
+               , vector
+               , fast-logger
+               , monad-logger
+               , extra
+
+executable haskell-code-indexer
+  main-is:             Indexer.hs
+  ghc-options:        -Wall -rtsopts -O2 -funbox-strict-fields
+  hs-source-dirs: app
+  build-depends:     IntervalMap
+                   , aeson                   
+                   , base        
+                   , bytestring
+                   , cereal
+                   , directory
+                   , filepath
+                   , optparse-applicative
+                   , text
+                   , time
+                   , unordered-containers
+                   , uri-encode
+                   , fast-logger
+                   , monad-logger
+                   , zlib
+                   , haskell-code-explorer 
+  default-language:    Haskell2010
+
+executable haskell-code-server
+  main-is:             Server.hs
+  ghc-options:        -Wall -O2 -rtsopts -funbox-strict-fields -threaded
+  hs-source-dirs: app,src
+  other-modules: HaskellCodeExplorer.Types  
+  build-depends:     IntervalMap
+                   , aeson
+                   , base
+                   , bytestring
+                   , cereal
+                   , containers
+                   , deepseq
+                   , directory                   
+                   , filemanip
+                   , filepath
+                   , blaze-html                   
+                   , text                   
+                   , unordered-containers                   
+                   , hashable
+                   , vector
+                   , wai
+                   , syb
+                   , haddock-library
+                   , servant                   
+                   , servant-server
+                   , mime-types
+                   , mtl
+                   , wai-extra
+                   , wai-middleware-static
+                   , warp
+                   , http-types                   
+                   , http-api-data
+                   , fast-logger
+                   , monad-logger
+                   , optparse-applicative
+                   , data-default
+                   , pagination
+  if impl(ghc >= 8.4.3)
+    build-depends: ghc-compact
+                                     
+test-suite test
+  default-language: Haskell2010
+  type: exitcode-stdio-1.0
+  ghc-options:    -Wall
+  hs-source-dirs: test
+  main-is:        Main.hs
+  build-depends: IntervalMap
+               , QuickCheck
+               , attoparsec
+               , base
+               , bytestring
+               , containers
+               , directory
+               , filepath
+               , hspec
+               , text
+               , uniplate
+               , unordered-containers               
+               , monad-logger
+               , process
+               , vector
+               , syb
+               , haskell-code-explorer

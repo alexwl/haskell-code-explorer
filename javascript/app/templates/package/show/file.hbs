@@ -1,0 +1,16 @@
+{{#if model.isHaskellModule}} 
+    {{haskell-module
+      path=model.id
+      name=model.name
+      packageId=model.packageId
+      componentId=model.componentId
+      html=model.sourceCodeHtml
+      identifiers=model.identifiers      
+      occurrences=model.occurrences
+      colorTheme=settings.colorTheme
+      declarations=model.declarations
+      findReferences=(action "findReferences")
+      }}
+{{else}}
+    {{text-file text=model.text path=model.id}}
+{{/if}}

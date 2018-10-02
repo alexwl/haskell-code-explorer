@@ -1,0 +1,8 @@
+<div class="expressions">
+    {{#each expressions as |expression|}}
+        <div class="expression">
+            <span class="source-code">{{expression.sourceCode}}</span>
+            <br/>:: {{type-signature type=expression.info.exprType identifiers=identifiers currentLineNumber=currentLineNumber}}
+        </div>
+    {{/each}}
+</div>
