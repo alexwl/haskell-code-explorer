@@ -155,16 +155,23 @@ function initializeIdentifiers (sourceCodeContainerElement,component) {
                          currentLineNumber);
         }
         else {          
-          if(!idOccurrenceInfo.isBinder && identifierInfo
-             && (event.which === 1 || event.which === 2)) {            
-            goToDefinition(component.get('store'),
-                           identifierInfo.locationInfo,
-                           event.which,
-                           currentLineNumber);
+          if(identifierInfo && (event.which === 1 || event.which === 2)) {            
+            if(!idOccurrenceInfo.isBinder) {
+              goToDefinition(component.get('store'),
+                             identifierInfo.locationInfo,
+                             event.which,
+                             currentLineNumber);
+            } else {
+              if(identifierInfo.sort === "External") {
+                component.get('findReferences')(component.get('packageId'),
+                                                identifierInfo.externalId,
+                                                identifierInfo.demangledOccName);
+
+              }
+            }
           }
         }
-      }
-      
+      }      
       identifierElement.onmouseover = () => {
         highlightIdentifiers(sourceCodeContainerElement,identifierElement,true);
         if(timer) {
