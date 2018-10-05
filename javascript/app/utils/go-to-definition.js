@@ -9,21 +9,14 @@ function exactLocationToUrl(exactLocation) {
 }
 
 function hackageUrl(packageId,locationInfo) {
-  const dasherizedModuleName = locationInfo.moduleName.replace(/\./g,'-');
-  let key;
-  if(locationInfo.entity === "Val") {
-    key = "v";
-  } else {
-    key = "t";
-  }  
   let hash = "";
-  if(locationInfo.entity === "Val" || locationInfo.entity === "Typ") {
-    hash = "#"+key+":"+locationInfo.haddockAnchorId;
-  }   
-  return "https://hackage.haskell.org/package/"+packageId+"/docs/"+dasherizedModuleName+".html"+hash;
+  if (locationInfo.entity !== "Mod") {
+    hash = "#" + encodeURIComponent(locationInfo.name);
+  }
+  return "https://hackage.haskell.org/package/"+packageId+"/docs/src/"+locationInfo.moduleName+".html"+hash;
 }
 
-function openUrl(buttonId,url) {  
+function openUrl(buttonId,url) {
   if(buttonId === 2) {//middle mouse button
     window.open(url, '_blank');
   } else if(buttonId == 1) {//left mouse button
