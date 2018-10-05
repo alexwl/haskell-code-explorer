@@ -59,6 +59,8 @@ stack --stack-yaml=stack-8.0.2.yaml install
 
 `haskell-code-indexer` executable is responsible for indexing packages (by default index is saved to `.haskell-code-explorer` directory).
 
+A package should be built using either cabal-install or stack before indexing (`cabal new-build`,`cabal build`, or `stack build` command should be executed).
+
 `haskell-code-indexer` requires globally installed GHC and cabal-install (`cabal`). The reason for this is that `haskell-code-indexer` uses `cabal-helper` library [https://hackage.haskell.org/package/cabal-helper](https://hackage.haskell.org/package/cabal-helper) to get package build information. `cabal-helper` builds (at runtime) an executable linked against a version of Cabal library that was used to configure the package.
 
 If there is no globally installed GHC on the system, then it is possible to use `stack exec` command ([https://docs.haskellstack.org/en/stable/GUIDE/#exec](https://docs.haskellstack.org/en/stable/GUIDE/#exec)) that adds a path to GHC binaries installed by Stack to `PATH` environment variable :
@@ -114,3 +116,4 @@ haskell-code-server --package PATH1 --package PATH2 --package PATH3 --port 8080 
 ```
 
 Open [http://localhost:8080](http://localhost:8080) in a browser to explore source code of the package.
+
