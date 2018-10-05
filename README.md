@@ -81,12 +81,12 @@ Index package :
 haskell-code-indexer --package PATH
 ```
 
-Index package with specific dist directory :
+Index package with specific `dist` directory:
 ```bash
-haskell-code-indexer --package PATH --dist dist-newstyle
+haskell-code-indexer --package PATH --dist dist-newstyle/build/x86_64-linux/ghc-8.2.2/hpath-0.9.2
 ```
 
-Index package built by Stack :
+Index package built by Stack:
 ```bash
 haskell-code-indexer --package PATH --dist $(stack path --dist-dir)
 ```
