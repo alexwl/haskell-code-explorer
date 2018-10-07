@@ -1,0 +1,9 @@
+signature Str where
+
+data Str
+instance Eq Str
+
+null :: Str -> Bool
+singleton :: Char -> Str
+splits :: Str -> [(Str, Str)]
+parts :: Str -> [[Str]]

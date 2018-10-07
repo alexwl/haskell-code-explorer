@@ -1,0 +1,29 @@
+name:                bkpregex
+version:             0.1.0.0
+build-type:          Simple
+cabal-version:       2.0
+
+library str-impls
+  build-depends:       base, bytestring
+  exposed-modules:     Str.String, Str.ByteString
+  hs-source-dirs:      str-impls
+
+library regex-types
+  build-depends:       base
+  exposed-modules:     Regex.Types
+  hs-source-dirs:      regex-types
+
+library regex-indef
+  build-depends:       base, regex-types
+  signatures:          Str
+  exposed-modules:     Regex
+  hs-source-dirs:      regex-indef
+
+executable regex-example
+  main-is:             Main.hs
+  build-depends:       base, regex-indef, regex-types, str-impls
+  mixins:              regex-indef (Regex as Regex.String)
+                          requires (Str as Str.String),
+                       regex-indef (Regex as Regex.ByteString)
+                          requires (Str as Str.ByteString)
+  hs-source-dirs:      regex-example

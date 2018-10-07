@@ -1,0 +1,31 @@
+name:                exeintlib
+version:             0
+build-type:          Simple
+cabal-version:       >=2.0
+
+library
+  exposed-modules:     Lib
+  hs-source-dirs:      lib
+  build-depends:       base, filepath, intlib
+  default-language:    Haskell2010
+
+library intlib
+  exposed-modules:     IntLib
+  hs-source-dirs:      intlib
+  build-depends:       base, directory
+  default-language:    Haskell2010
+
+executable exe
+  main-is:             Exe.hs
+  build-depends:       base, exeintlib
+  default-language:    Haskell2010
+
+test-suite exe-test
+    type:              exitcode-stdio-1.0
+    main-is:           Exe.hs
+    build-depends:     base, exeintlib
+
+benchmark exe-bench
+    type:              exitcode-stdio-1.0
+    main-is:           Exe.hs
+    build-depends:     base, exeintlib

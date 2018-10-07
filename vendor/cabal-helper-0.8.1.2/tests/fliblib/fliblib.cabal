@@ -1,0 +1,19 @@
+name:                fliblib
+version:             0
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     Lib
+  hs-source-dirs:      lib
+  build-depends:       base, filepath, directory
+  default-language:    Haskell2010
+
+foreign-library flib
+  other-modules:       FLib
+  build-depends:       base, fliblib
+  hs-source-dirs:      .
+  type:                native-shared
+  if os(Windows)
+    options:           standalone
+  default-language:    Haskell2010

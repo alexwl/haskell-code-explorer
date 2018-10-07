@@ -1,0 +1,46 @@
+language: haskell
+ghc:
+  - 7.4
+  - 7.6
+  - 7.8
+
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - zlib1g-dev
+
+cache:
+  apt: true
+  directories:
+  - ~/.cabal
+  - ~/.ghc
+  - ~/.stack
+
+install:
+  - export HOME=/tmp
+  - cabal update
+  - echo $PATH
+  - which cabal
+  - cabal install -j --only-dependencies --enable-tests
+  - if [ -n "$(ghc --version | awk '{ print $8 }' | sed -n '/^7.4/p')" ]; then cabal install Cabal --constraint "Cabal == 1.16.*"; fi
+
+
+before_script:
+  - rm -f ~/.ghc-mod cabal-helper-*-Cabal-*
+
+script:
+  - touch ChangeLog # Create ChangeLog if we're not on the release branch
+  - cabal check
+
+  - cabal sdist
+  - export SRC_TGZ="$PWD/dist/$(cabal info . | awk '{print $2 ".tar.gz";exit}')"
+  - rm -rf /tmp/cabal-helper* && cd /tmp
+  - tar -xf $SRC_TGZ && cd cabal-helper*/
+
+  - if [ -n "$(ghc --version | awk '{ print $8 }' | sed -n '/^7.8/p')" ]; then export WERROR="--ghc-option=-Werror"; fi
+  - cabal configure --enable-tests $WERROR
+  - cabal build
+  - ./dist/build/cabal-helper-wrapper-v0.7/cabal-helper-wrapper-v0.7 . dist "compiler-version" "entrypoints" "source-dirs" "ghc-options" "ghc-src-options" "ghc-pkg-options" "ghc-lang-options"
+  - ./dist/build/spec/spec
