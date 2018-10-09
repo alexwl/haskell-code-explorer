@@ -1,10 +1,8 @@
-resolver: lts-11.3
+resolver: lts-12.4
 packages:
 - '.'
-packages:
-  - .
-  - location: vendor/cabal-helper-0.8.1.2
-    extra-dep: true
+- location: vendor/cabal-helper-0.8.1.2
+  extra-dep: true
+allow-newer: true
 extra-deps:
- - cabal-plan-0.4.0.0
- - pretty-show-1.8.2
+  - cabal-plan-0.4.0.0

@@ -3,6 +3,8 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module HaskellCodeExplorer.GhcUtils
@@ -138,11 +140,18 @@ import GHC
   , tyFamInstDeclName 
   , idType
   , hsib_body
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
+#else
   , tfe_pats
+#endif
   , tfid_eqn
   )
+
 import qualified HaskellCodeExplorer.Types as HCE
 import HscTypes (TypeEnv, lookupTypeEnv)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
+import HsExtension (GhcPs, GhcRn, GhcTc, IdP(..), Pass(..))
+#endif
 import IdInfo (IdDetails(..))
 import InstEnv (ClsInst(..))
 import Lexer (ParseResult(POk), mkPState, unP)
@@ -250,9 +259,12 @@ instanceToText :: DynFlags -> ClsInst -> T.Text
 instanceToText flags ClsInst {..} =
   T.append "instance " $ T.pack . showSDoc flags $ pprSigmaType (idType is_dfun)
 
-instanceDeclToText :: DynFlags -> InstDecl Name -> T.Text
+--instanceDeclToText :: DynFlags -> InstDecl Name -> T.Text
 instanceDeclToText flags decl =
   case decl of
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)        
+    _ -> ""
+#else
     ClsInstD ClsInstDecl {..} -> T.append "instance " (toText flags cid_poly_ty)
     DataFamInstD di ->
       let args =
@@ -266,6 +278,7 @@ instanceDeclToText flags decl =
             ti
        in T.concat
             ["type instance ", toText flags $ tyFamInstDeclName ti, " ", args]
+#endif
 
 nameToText :: Name -> T.Text
 nameToText = T.pack . unpackFS . occNameFS . nameOccName
@@ -366,7 +379,9 @@ mbIdDetails _ = Nothing
 --  Syntax transformation
 --------------------------------------------------------------------------------
 
-hsGroupVals :: HsGroup Name -> [GenLocated SrcSpan (HsBindLR Name Name)]
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+hsGroupVals :: HsGroup GhcRn -> [GenLocated SrcSpan (HsBindLR GhcRn GhcRn)]
+#endif
 hsGroupVals hsGroup =
   filter (isGoodSrcSpan . getLoc) $
   case hs_valds hsGroup of
@@ -375,6 +390,9 @@ hsGroupVals hsGroup =
 
 hsPatSynDetails :: HsPatSynDetails a -> [a]
 hsPatSynDetails patDetails =
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+    []
+#else
   case patDetails of
     InfixPatSyn name1 name2 -> [name1, name2]
     PrefixPatSyn name -> name
@@ -382,8 +400,13 @@ hsPatSynDetails patDetails =
       concatMap
         (\field -> [recordPatSynSelectorId field, recordPatSynPatVar field])
         fields
+#endif
 
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+--unwrapName :: LIEWrappedName n -> Located n
+unwrapName = ieLWrappedName
+#elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 unwrapName :: LIEWrappedName Name -> Located Name
 unwrapName = ieLWrappedName
 #else
@@ -391,7 +414,7 @@ unwrapName :: Located Name -> Located Name
 unwrapName n = n
 #endif
 
-ieLocNames :: IE Name -> [Located Name]
+--ieLocNames :: IE (IdP GhcTc) -> [Located Name]
 ieLocNames (IEVar n) = [unwrapName n]
 ieLocNames (IEThingAbs n) = [unwrapName n]
 ieLocNames (IEThingAll n) = [unwrapName n]
@@ -909,7 +932,7 @@ collectDocs = go Nothing []
     go (Just prev) docs (d:ds) = finished prev docs (go (Just d) [] ds)
     finished decl docs rest = (decl, reverse docs) : rest
 
-ungroup :: HsGroup Name -> [LHsDecl Name]
+--ungroup :: HsGroup Name -> [LHsDecl Name]
 ungroup group_ =
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
   mkDecls (tyClGroupTyClDecls . hs_tyclds) TyClD group_ ++  
@@ -939,7 +962,7 @@ mkDecls field con struct = [L loc (con decl) | L loc decl <- field struct]
 sortByLoc :: [Located a] -> [Located a]
 sortByLoc = L.sortBy (comparing getLoc)
 
-classDeclDocs :: TyClDecl Name -> [(LHsDecl Name, [HsDocString])]
+--classDeclDocs :: TyClDecl Name -> [(LHsDecl Name, [HsDocString])]
 classDeclDocs class_ = collectDocs . sortByLoc $ decls
   where
     decls = docs ++ defs ++ sigs ++ ats
@@ -948,13 +971,13 @@ classDeclDocs class_ = collectDocs . sortByLoc $ decls
     sigs = mkDecls tcdSigs SigD class_
     ats = mkDecls tcdATs (TyClD . FamDecl) class_
 
-conDeclDocs :: ConDecl Name -> [(Name, [HsDocString], SrcSpan)]
+--conDeclDocs :: ConDecl Name -> [(Name, [HsDocString], SrcSpan)]
 conDeclDocs conDecl =
   map (\(L span n) -> (n, maybe [] ((: []) . unLoc) $ con_doc conDecl, span)) .
   getConNames $
   conDecl
 
-selectorDocs :: ConDecl name -> [(PostRn name name, [HsDocString], SrcSpan)]
+--selectorDocs :: ConDecl name -> [(PostRn name name, [HsDocString], SrcSpan)]
 selectorDocs con =
   case getConDetails con of
     RecCon (L _ flds) ->
@@ -967,9 +990,14 @@ selectorDocs con =
         flds
     _ -> []
 
-subordinateNamesWithDocs ::
-     [GenLocated SrcSpan (HsDecl Name)] -> [(Name, [HsDocString], SrcSpan)]
-subordinateNamesWithDocs =
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)    
+subordinateNamesWithDocs :: [GenLocated SrcSpan (HsDecl GhcRn)] -> [(Name, [HsDocString], SrcSpan)]
+#endif
+subordinateNamesWithDocs _ =
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)    
+  []
+#else
   concatMap
     (\(L span tyClDecl) ->
        case tyClDecl of
@@ -983,13 +1011,14 @@ subordinateNamesWithDocs =
          InstD (DataFamInstD DataFamInstDecl {..}) ->
            concatMap (conDeclDocs . unLoc) . dd_cons $ dfid_defn
          _ -> [])
+#endif
     
 isUserLSig :: LSig name -> Bool
 isUserLSig (L _ TypeSig {})    = True
 isUserLSig (L _ ClassOpSig {}) = True
 isUserLSig _ = False
 
-getMainDeclBinder :: HsDecl name -> [name]
+--getMainDeclBinder :: HsDecl name -> [name]
 getMainDeclBinder (TyClD d) = [tcdName d]
 getMainDeclBinder (ValD d) =
   case collectHsBindBinders d of
@@ -1000,7 +1029,7 @@ getMainDeclBinder (ForD (ForeignImport name _ _ _)) = [unLoc name]
 getMainDeclBinder (ForD ForeignExport {}) = []
 getMainDeclBinder _ = []
 
-sigNameNoLoc :: Sig name -> [name]
+--sigNameNoLoc :: Sig name -> [name]
 sigNameNoLoc (TypeSig      ns _)       = map unLoc ns
 sigNameNoLoc (ClassOpSig _ ns _)       = map unLoc ns
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
@@ -1108,6 +1137,7 @@ outOfScope dflags x =
     Orig _ occ -> monospaced occ
     Exact name -> monospaced name -- Shouldn't happen since x is out of scope
   where
+    monospaced :: (Outputable a) => a -> Doc b
     monospaced a = DocMonospaced (DocString (showPpr dflags a))
 
 makeAnchorId :: String -> String

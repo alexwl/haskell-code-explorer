@@ -23,8 +23,9 @@ import qualified Data.Map.Strict as M
 import qualified Data.IntMap.Strict as IM
 import qualified Data.IntervalMap.Strict as IVM
 import qualified Data.List as L hiding (span)
-import Data.Maybe(fromMaybe,mapMaybe)
-import Data.Ord(comparing)
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Ord (comparing)
+import HsExtension (GhcRn)
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -307,10 +308,17 @@ createDefinitionSiteMap ::
   -> HCE.SourceCodeTransformation
   -> ModuleInfo
   -> [Name]
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
+  -> HsGroup GhcRn
+#else
   -> HsGroup Name
+#endif
   -> (HCE.DefinitionSiteMap, [Name])
 createDefinitionSiteMap flags currentPackageId compId defSiteMap fileMap globalRdrEnv transformation modInfo dataFamTyCons hsGroup =
-  let allDecls :: [GenLocated SrcSpan (HsDecl Name)]
+  let
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+      allDecls :: [GenLocated SrcSpan (HsDecl GhcRn)]
+#endif
       allDecls = L.sortBy (comparing getLoc) . ungroup $ hsGroup
       (instanceDeclsWithDocs, valueAndTypeDeclsWithDocs) =
         L.partition
@@ -465,7 +473,9 @@ docWithNamesToHtml flags packageId compId transformation fileMap defSiteMap =
 
 createDeclarations ::
      DynFlags
-  -> HsGroup Name
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)           
+  -> HsGroup GhcRn
+#endif
   -> TypeEnv
   -> S.Set Name
   -> HCE.SourceCodeTransformation
@@ -483,8 +493,9 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
           Nothing -> Nothing
       -- | Top-level functions
       --------------------------------------------------------------------------------
-      valToDeclarations ::
-           GenLocated SrcSpan (HsBindLR Name Name) -> [HCE.Declaration]
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)      
+      valToDeclarations :: GenLocated SrcSpan (HsBindLR GhcRn GhcRn) -> [HCE.Declaration]
+#endif                           
       valToDeclarations (L loc bind) =
         map
           (\name ->
@@ -498,7 +509,9 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
       vals = concatMap valToDeclarations $ hsGroupVals hsGroup
       -- | Data, newtype, type, type family, data family or class declaration
       --------------------------------------------------------------------------------
-      tyClToDeclaration :: GenLocated SrcSpan (TyClDecl Name) -> HCE.Declaration
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)            
+      tyClToDeclaration :: GenLocated SrcSpan (TyClDecl GhcRn) -> HCE.Declaration
+#endif                           
       tyClToDeclaration (L loc tyClDecl) =
         HCE.Declaration
           HCE.TyClD
@@ -512,7 +525,9 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
         hsGroup
       -- | Instances
       --------------------------------------------------------------------------------
-      instToDeclaration :: GenLocated SrcSpan (InstDecl Name) -> HCE.Declaration
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)                    
+      instToDeclaration :: GenLocated SrcSpan (InstDecl GhcRn) -> HCE.Declaration
+#endif                           
       instToDeclaration (L loc inst) =
         HCE.Declaration
           HCE.InstD
@@ -529,8 +544,10 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
         hsGroup
       -- | Foreign functions
       --------------------------------------------------------------------------------
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)                            
       foreignFunToDeclaration ::
-           GenLocated SrcSpan (ForeignDecl Name) -> HCE.Declaration
+           GenLocated SrcSpan (ForeignDecl GhcRn) -> HCE.Declaration
+#endif           
       foreignFunToDeclaration (L loc fd) =
         let name = unLoc $ fd_name fd
          in HCE.Declaration
@@ -588,7 +605,11 @@ foldAST environment typecheckedModule =
         case mbExported of
           Just lieNames ->
             mapMaybe
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)            
+              (\(L span ie,_) ->
+#else
               (\(L span ie) ->
+#endif
                  case ie of
                    IEModuleContents (L _ modName) ->
                      Just
