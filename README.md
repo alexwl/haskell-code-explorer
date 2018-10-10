@@ -66,7 +66,7 @@ A package should be built using either cabal-install or stack before indexing (`
 If there is no globally installed GHC on the system, then it is possible to use `stack exec` command ([https://docs.haskellstack.org/en/stable/GUIDE/#exec](https://docs.haskellstack.org/en/stable/GUIDE/#exec)) that adds a path to GHC binaries installed by Stack to `PATH` environment variable :
 
 ```bash
-stack --resolver=lts-11.3 exec haskell-code-indexer -- INDEXER_OPTIONS
+stack --resolver=lts-11.3 exec --no-ghc-package-path haskell-code-indexer -- INDEXER_OPTIONS
 ```
 
 ### Examples :
@@ -116,4 +116,3 @@ haskell-code-server --package PATH1 --package PATH2 --package PATH3 --port 8080 
 ```
 
 Open [http://localhost:8080](http://localhost:8080) in a browser to explore source code of the package.
-
