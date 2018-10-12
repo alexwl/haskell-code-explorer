@@ -140,17 +140,25 @@ moduleInfoSpec modInfo =
     it "returns valid map of identifiers " $
       let removeLocationInfo :: HCE.LocationInfo -> HCE.LocationInfo
           removeLocationInfo _ = HCE.UnknownLocation ""
-       in U.transformBi
-            removeLocationInfo
-            (HCE.idInfoMap (modInfo :: HCE.ModuleInfo)) `shouldBe`
-          U.transformBi removeLocationInfo testIdInfoMap
+          removePackageVersionFromExternalId :: HCE.ExternalId -> HCE.ExternalId
+          removePackageVersionFromExternalId extId@(HCE.ExternalId textId) = case T.splitOn "|" textId of
+            packageId:rest -> case T.splitOn "-" packageId of
+              packageIdParts@(_:_) -> HCE.ExternalId $ T.intercalate "|" ((T.intercalate "-" (init packageIdParts)) : rest)
+              _ -> extId
+            _ ->  extId
+          cleanup :: HCE.IdentifierInfoMap -> HCE.IdentifierInfoMap
+          cleanup = U.transformBi removeLocationInfo . U.transformBi removePackageVersionFromExternalId
+       in 
+        cleanup (HCE.idInfoMap (modInfo :: HCE.ModuleInfo)) `shouldBe` cleanup testIdInfoMap
 #endif          
     it "returns valid map of identifier occurrences" $
       HCE.idOccMap (modInfo :: HCE.ModuleInfo) `shouldBe` testIdOccMap
 
-stackYamlArg :: [String]   
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
+stackYamlArg :: [String]
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 stackYamlArg = []
+#elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
+stackYamlArg = ["--stack-yaml=stack-8.2.2.yaml" ]
 #else
 stackYamlArg = ["--stack-yaml=stack-8.0.2.yaml" ]
 #endif
@@ -177,7 +185,7 @@ buildAndIndexTestPackage currentDir = do
                   _ <-
                     readProcess
                       stackExecutable
-                      (["build", "--test"] ++ stackYamlArg)
+                      (["build", "--test","--force-dirty"] ++ stackYamlArg)
                       ""
                   runLoggingT
                     (createPackageInfo
@@ -1209,3 +1217,5 @@ testIdInfoMap =
           , isExported = False
           })
     ]
+
+

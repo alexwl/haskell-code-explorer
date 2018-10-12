@@ -6,6 +6,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StrictData #-}
 
 module HaskellCodeExplorer.ModuleInfo
@@ -25,7 +26,9 @@ import qualified Data.IntervalMap.Strict as IVM
 import qualified Data.List as L hiding (span)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Ord (comparing)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 import HsExtension (GhcRn)
+#endif
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -475,6 +478,8 @@ createDeclarations ::
      DynFlags
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)           
   -> HsGroup GhcRn
+#else
+  -> HsGroup Name
 #endif
   -> TypeEnv
   -> S.Set Name

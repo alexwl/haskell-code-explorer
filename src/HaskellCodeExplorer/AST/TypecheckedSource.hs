@@ -80,7 +80,9 @@ import HsSyn
   , selectorAmbiguousFieldOcc
   )
 import HscTypes (TypeEnv, lookupTypeEnv)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 import HsExtension (GhcTc)
+#endif
 import Id (idType)
 import IdInfo (IdDetails(..))
 import InstEnv
@@ -545,11 +547,15 @@ tidyType typ = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldTypecheckedSource :: LHsBinds GhcTc -> State ASTState ()
+#else
+foldTypecheckedSource :: LHsBinds Id -> State ASTState ()
 #endif
 foldTypecheckedSource = foldLHsBindsLR
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldLHsExpr :: LHsExpr GhcTc -> State ASTState (Maybe Type)
+#else
+foldLHsExpr :: LHsExpr Id -> State ASTState (Maybe Type)
 #endif
 foldLHsExpr (L span (HsVar (L _ identifier))) =
   restoreTidyEnv $ do
@@ -809,6 +815,8 @@ foldLHsExpr (L span (HsWrap wrapper expr)) =
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldHsRecFields :: HsRecFields GhcTc (LHsExpr GhcTc) -> State ASTState (Maybe Type)
+#else
+foldHsRecFields :: HsRecFields Id (LHsExpr Id) -> State ASTState (Maybe Type)
 #endif
 foldHsRecFields HsRecFields {..} = do
   let userWritten =
@@ -820,6 +828,8 @@ foldHsRecFields HsRecFields {..} = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldLHsRecField :: LHsRecField GhcTc (LHsExpr GhcTc) -> State ASTState (Maybe Type)
+#else
+foldLHsRecField :: LHsRecField Id (LHsExpr Id) -> State ASTState (Maybe Type)
 #endif
 foldLHsRecField (L span (HsRecField (L idSpan (FieldOcc _ identifier)) arg pun)) =
   restoreTidyEnv $ do
@@ -831,6 +841,8 @@ foldLHsRecField (L span (HsRecField (L idSpan (FieldOcc _ identifier)) arg pun))
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldLHsRecUpdField :: LHsRecUpdField GhcTc -> State ASTState (Maybe Type)
+#else
+foldLHsRecUpdField :: LHsRecUpdField Id -> State ASTState (Maybe Type)
 #endif
 foldLHsRecUpdField (L span (HsRecField (L idSpan recField) arg pun)) =
   restoreTidyEnv $ do
@@ -857,6 +869,8 @@ data TupArg
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldLHsTupArg :: LHsTupArg GhcTc -> State ASTState (Maybe Type, TupArg)
+#else
+foldLHsTupArg :: LHsTupArg Id -> State ASTState (Maybe Type, TupArg)
 #endif
 foldLHsTupArg (L _span (Present expr)) =
   restoreTidyEnv $ do
@@ -873,6 +887,8 @@ foldLHsTupArg (L _ (Missing typ)) =
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldLMatch :: LMatch GhcTc (LHsExpr GhcTc) -> State ASTState (Maybe Type)
+#else
+foldLMatch :: LMatch Id (LHsExpr Id) -> State ASTState (Maybe Type)
 #endif
 foldLMatch (L _span Match {..}) = do
   mapM_ foldLPat m_pats
@@ -881,6 +897,8 @@ foldLMatch (L _span Match {..}) = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)      
 foldLMatchCmd :: LMatch GhcTc (LHsCmd GhcTc) -> State ASTState (Maybe Type)
+#else
+foldLMatchCmd :: LMatch Id (LHsCmd Id) -> State ASTState (Maybe Type)
 #endif
 foldLMatchCmd (L _span Match {..}) = do
   mapM_ foldLPat m_pats
@@ -889,6 +907,8 @@ foldLMatchCmd (L _span Match {..}) = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)      
 foldGRHSsCmd :: GRHSs GhcTc (LHsCmd GhcTc) -> State ASTState (Maybe Type)
+#else
+foldGRHSsCmd :: GRHSs Id (LHsCmd Id) -> State ASTState (Maybe Type)
 #endif
 foldGRHSsCmd GRHSs {..} = do
   mapM_ foldLGRHSCmd grhssGRHSs
@@ -897,6 +917,8 @@ foldGRHSsCmd GRHSs {..} = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldGRHSs :: GRHSs GhcTc (LHsExpr GhcTc) -> State ASTState (Maybe Type)
+#else
+foldGRHSs :: GRHSs Id (LHsExpr Id) -> State ASTState (Maybe Type)
 #endif
 foldGRHSs GRHSs {..} = do
   mapM_ foldLGRHS grhssGRHSs
@@ -905,6 +927,8 @@ foldGRHSs GRHSs {..} = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldLStmtLR :: LStmtLR GhcTc GhcTc (LHsExpr GhcTc) -> State ASTState (Maybe Type)
+#else
+foldLStmtLR :: LStmtLR Id Id (LHsExpr Id) -> State ASTState (Maybe Type)
 #endif
 foldLStmtLR (L span (LastStmt body _ _)) =  
   do typ <- foldLHsExpr body
@@ -941,6 +965,8 @@ foldLStmtLR (L span (ApplicativeStmt args _ typ)) =
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldApplicativeArg :: ApplicativeArg GhcTc GhcTc -> State ASTState (Maybe Type)
+#else
+foldApplicativeArg :: ApplicativeArg Id Id -> State ASTState (Maybe Type)
 #endif
 foldApplicativeArg appArg =
   case appArg of
@@ -957,8 +983,10 @@ foldApplicativeArg appArg =
       _ <- foldLPat pat
       return Nothing  
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
-foldLStmtLRCmd :: LStmtLR GhcTc GhcTc (LHsCmd GhcTc) 
-               -> State ASTState (Maybe Type)
+foldLStmtLRCmd ::
+     LStmtLR GhcTc GhcTc (LHsCmd GhcTc) -> State ASTState (Maybe Type)
+#else
+foldLStmtLRCmd :: LStmtLR Id Id (LHsCmd Id) -> State ASTState (Maybe Type)
 #endif                  
 foldLStmtLRCmd (L span (LastStmt body _syntaxExpr _)) = do
   typ <- foldLHsCmd body
@@ -995,6 +1023,8 @@ foldLStmtLRCmd (L span (ApplicativeStmt args _ typ)) =
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)    
 foldLGRHS :: LGRHS GhcTc (LHsExpr GhcTc) -> State ASTState (Maybe Type)
+#else
+foldLGRHS :: LGRHS Id (LHsExpr Id) -> State ASTState (Maybe Type)
 #endif
 foldLGRHS (L _span (GRHS guards body)) = do
   typ <- foldLHsExpr body
@@ -1003,14 +1033,18 @@ foldLGRHS (L _span (GRHS guards body)) = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldLGRHSCmd :: LGRHS GhcTc (LHsCmd GhcTc) -> State ASTState (Maybe Type)
+#else
+foldLGRHSCmd :: LGRHS Id (LHsCmd Id) -> State ASTState (Maybe Type)
 #endif
 foldLGRHSCmd (L _span (GRHS guards body)) = do
   typ <- foldLHsCmd body
   mapM_ foldLStmtLR guards
   return typ   
 
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldParStmtBlock :: ParStmtBlock GhcTc GhcTc -> State ASTState (Maybe Type)
+#else
+foldParStmtBlock :: ParStmtBlock Id Id -> State ASTState (Maybe Type)
 #endif
 foldParStmtBlock (ParStmtBlock exprStmts _ids _syntaxExpr) = do
   mapM_ foldLStmtLR exprStmts
@@ -1018,6 +1052,8 @@ foldParStmtBlock (ParStmtBlock exprStmts _ids _syntaxExpr) = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldHsLocalBindsLR :: HsLocalBindsLR GhcTc GhcTc -> State ASTState (Maybe Type)
+#else
+foldHsLocalBindsLR :: HsLocalBindsLR Id Id -> State ASTState (Maybe Type)
 #endif
 foldHsLocalBindsLR (HsValBinds binds) = do
   _ <- foldHsValBindsLR binds
@@ -1027,6 +1063,8 @@ foldHsLocalBindsLR EmptyLocalBinds = return Nothing
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldHsValBindsLR :: HsValBindsLR GhcTc GhcTc -> State ASTState (Maybe Type)
+#else
+foldHsValBindsLR :: HsValBindsLR Id Id -> State ASTState (Maybe Type)
 #endif
 foldHsValBindsLR (ValBindsIn _ _) = return Nothing
 foldHsValBindsLR (ValBindsOut binds _) = do
@@ -1035,6 +1073,8 @@ foldHsValBindsLR (ValBindsOut binds _) = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldLHsBindsLR :: LHsBinds GhcTc -> State ASTState ()
+#else
+foldLHsBindsLR :: LHsBinds Id -> State ASTState ()
 #endif
 foldLHsBindsLR = mapM_ (`foldLHsBindLR` Nothing) . bagToList
 
@@ -1042,7 +1082,11 @@ foldLHsBindsLR = mapM_ (`foldLHsBindLR` Nothing) . bagToList
 foldLHsBindLR :: LHsBindLR GhcTc GhcTc
               -> Maybe Id -- ^ Polymorphic id
               -> State ASTState (Maybe Type)
-#endif              
+#else
+foldLHsBindLR :: LHsBindLR Id Id
+              -> Maybe Id -- ^ Polymorphic id
+              -> State ASTState (Maybe Type)
+#endif
 foldLHsBindLR (L _span FunBind {..}) mbPolyId
   | mg_origin fun_matches == FromSource =
     restoreTidyEnv $ do
@@ -1077,26 +1121,35 @@ foldLHsBindLR (L _ AbsBindsSig {..}) _ = do
 foldLHsBindLR (L _ (PatSynBind PSB {..})) _ =
   restoreTidyEnv $ do
     _ <- foldLPat psb_def
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
-#else    
     _ <-
       let addId :: GenLocated SrcSpan Id -> State ASTState ()
           addId (L span i) = do
             (i', _) <- tidyIdentifier i
             addIdentifierToIdSrcSpanMap span i' Nothing
        in case psb_args of
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+            InfixCon id1 id2 -> addId id1 >> addId id2
+            PrefixCon ids -> mapM_ addId ids
+            RecCon recs ->
+              mapM_
+                (\(RecordPatSynField selId patVar) ->
+                   addId selId >> addId patVar)
+                recs
+#else
             InfixPatSyn id1 id2 -> addId id1 >> addId id2
             PrefixPatSyn ids -> mapM_ addId ids
             RecordPatSyn recs ->
               mapM_
                 (\(RecordPatSynField selId patVar) ->
                    addId selId >> addId patVar)
-                recs
+                recs 
 #endif
     return Nothing
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
 foldLPat :: LPat GhcTc -> State ASTState (Maybe Type)
+#else
+foldLPat :: LPat Id -> State ASTState (Maybe Type)
 #endif
 foldLPat (L span (VarPat (L _ identifier))) = do
   (identifier', _) <- tidyIdentifier identifier
@@ -1207,6 +1260,10 @@ foldLPat (L span p@(CoPat _ pat typ)) = do
 foldHsConPatDetails
   :: HsConPatDetails GhcTc
   -> State ASTState (Maybe Type)
+#else
+foldHsConPatDetails
+  :: HsConPatDetails Id
+  -> State ASTState (Maybe Type)
 #endif  
 foldHsConPatDetails (PrefixCon args) = do
   _ <- mapM_ foldLPat args
@@ -1221,6 +1278,8 @@ foldHsConPatDetails (InfixCon arg1 arg2) = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldHsRecFieldsPat :: HsRecFields GhcTc (LPat GhcTc) -> State ASTState (Maybe Type)
+#else
+foldHsRecFieldsPat :: HsRecFields Id (LPat Id) -> State ASTState (Maybe Type)
 #endif
 foldHsRecFieldsPat HsRecFields {..} = do
   let onlyUserWritten =
@@ -1232,6 +1291,8 @@ foldHsRecFieldsPat HsRecFields {..} = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldLHsRecFieldPat :: LHsRecField GhcTc (LPat GhcTc) -> State ASTState (Maybe Type)
+#else
+foldLHsRecFieldPat :: LHsRecField Id (LPat Id) -> State ASTState (Maybe Type)
 #endif
 foldLHsRecFieldPat (L _ (HsRecField (L idSpan (FieldOcc _ identifier)) arg pun)) = do
   (identifier', mbTypes) <- tidyIdentifier identifier
@@ -1241,6 +1302,8 @@ foldLHsRecFieldPat (L _ (HsRecField (L idSpan (FieldOcc _ identifier)) arg pun))
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldLHsCmdTop :: LHsCmdTop GhcTc -> State ASTState (Maybe Type)
+#else
+foldLHsCmdTop :: LHsCmdTop Id -> State ASTState (Maybe Type)
 #endif
 foldLHsCmdTop (L span (HsCmdTop cmd _ _ _)) = do
   mbTyp <- foldLHsCmd cmd
@@ -1249,6 +1312,8 @@ foldLHsCmdTop (L span (HsCmdTop cmd _ _ _)) = do
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldLHsCmd :: LHsCmd GhcTc -> State ASTState (Maybe Type)
+#else
+foldLHsCmd :: LHsCmd Id -> State ASTState (Maybe Type)
 #endif
 foldLHsCmd (L _ (HsCmdArrApp expr1 expr2 _ _ _)) = do
   _ <- foldLHsExpr expr1
