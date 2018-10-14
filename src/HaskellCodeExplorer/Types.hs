@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -47,6 +48,11 @@ import Documentation.Haddock.Types
   , Header(..)
   , Hyperlink(..)
   , Picture(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+  , Table(..)
+  , TableCell(..)
+  , TableRow(..)  
+#endif    
   )
 import GHC.Generics (Generic)
 import Prelude hiding (id)
@@ -781,7 +787,7 @@ docToHtml modToHtml idToHtml = toStrict . renderHtml . toH
             in htmlPrompt >> htmlExpression >>
                mapM_ (Html.span . Html.toHtml) (unlines results))
         examples
-    toH (DocString str) = Html.span . Html.toHtml $ T.pack str    
+    toH (DocString str) = Html.span . Html.toHtml $ T.pack str
     toH (DocHeader (Header level doc)) = toHeader level $ toH doc
       where
         toHeader 1 = Html.h1
@@ -790,6 +796,18 @@ docToHtml modToHtml idToHtml = toStrict . renderHtml . toH
         toHeader 4 = Html.h4
         toHeader 5 = Html.h5
         toHeader _ = Html.h6
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+    toH (DocTable (Table hs bs)) =
+      let tableRowToH tdOrTh (TableRow cells) =
+            Html.tr $ mapM_ (tableCellToH tdOrTh) cells
+          tableCellToH tdOrTh (TableCell colspan rowspan doc) =
+            (tdOrTh $ toH doc) Html.!?
+            (colspan /= 1, (Attr.colspan (Html.stringValue $ show colspan))) Html.!?
+            (rowspan /= 1, (Attr.rowspan (Html.stringValue $ show rowspan)))
+       in Html.table $
+          Html.thead (mapM_ (tableRowToH Html.th) hs) >>
+          Html.tbody (mapM_ (tableRowToH Html.td) bs)
+#endif          
         
 instance A.ToJSON HaskellModuleName where
   toJSON (HaskellModuleName name) = A.String name

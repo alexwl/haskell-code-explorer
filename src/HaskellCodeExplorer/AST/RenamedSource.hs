@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
@@ -54,10 +55,19 @@ import GHC
   , PatSynBind(..)
   , Sig(..)
   , TyClDecl(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+  , FamEqn(..)
+  , HsDataDefn(..)
+#else
   , TyFamEqn(..)
+#endif
   , Type
+  , RoleAnnotDecl(..)
   , unLoc
   )
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+import HsExtension (GhcRn)
+#endif
 import HaskellCodeExplorer.GhcUtils (hsPatSynDetails, ieLocNames)
 import Prelude hiding (span)
 import TysWiredIn
@@ -86,9 +96,14 @@ namesFromRenamedSource =
      hsTypeNames `extQ`
      tyClDeclNames `extQ`
      familyDeclNames `extQ`
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+     familyEqNames `extQ`
+     dataEqNames `extQ`
+#else
      tyFamilyEqNames `extQ`
      tyFamilyDefEqNames `extQ`
      dataFamInstDeclNames `extQ`
+#endif     
      conDeclNames `extQ`
      importNames `extQ`
      hsTyVarBndrNames `extQ`
@@ -97,9 +112,14 @@ namesFromRenamedSource =
      hsRecFieldExprNames `extQ`
      hsRecAmbFieldExprNames `extQ`
      hsRecFieldPatNames `extQ`
-     foreignDeclNames)
+     foreignDeclNames `extQ`
+     roleAnnotationNames)
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+fieldOccName :: Bool -> FieldOcc GhcRn -> NameOccurrence
+#else
 fieldOccName :: Bool -> FieldOcc Name -> NameOccurrence
+#endif    
 fieldOccName isBinder (FieldOcc (L span _) name) =
   NameOccurrence
     { locatedName = L span (Just name)
@@ -107,16 +127,26 @@ fieldOccName isBinder (FieldOcc (L span _) name) =
     , isBinder = isBinder
     }
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+conDeclFieldNames :: ConDeclField GhcRn -> [NameOccurrence]
+#else
 conDeclFieldNames :: ConDeclField Name -> [NameOccurrence]
+#endif    
 conDeclFieldNames ConDeclField {..} =
   map (fieldOccName True . unLoc) cd_fld_names
 
-hsRecFieldExprNames ::
-     HsRecField' (FieldOcc Name) (LHsExpr Name) -> [NameOccurrence]
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+hsRecFieldExprNames :: HsRecField' (FieldOcc GhcRn) (LHsExpr GhcRn) -> [NameOccurrence]
+#else
+hsRecFieldExprNames :: HsRecField' (FieldOcc Name) (LHsExpr Name) -> [NameOccurrence]
+#endif    
 hsRecFieldExprNames HsRecField {..} = [fieldOccName False $ unLoc hsRecFieldLbl]
 
-hsRecAmbFieldExprNames ::
-     HsRecField' (AmbiguousFieldOcc Name) (LHsExpr Name) -> [NameOccurrence]
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+hsRecAmbFieldExprNames :: HsRecField' (AmbiguousFieldOcc GhcRn) (LHsExpr GhcRn) -> [NameOccurrence]
+#else
+hsRecAmbFieldExprNames :: HsRecField' (AmbiguousFieldOcc Name) (LHsExpr Name) -> [NameOccurrence]
+#endif
 hsRecAmbFieldExprNames HsRecField {..} =
   let (L span recField) = hsRecFieldLbl
       mbName =
@@ -130,11 +160,18 @@ hsRecAmbFieldExprNames HsRecField {..} =
           }
       ]
 
-hsRecFieldPatNames ::
-     HsRecField' (FieldOcc Name) (LPat Name) -> [NameOccurrence]
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+hsRecFieldPatNames :: HsRecField' (FieldOcc GhcRn) (LPat GhcRn) -> [NameOccurrence]
+#else
+hsRecFieldPatNames :: HsRecField' (FieldOcc Name) (LPat Name) -> [NameOccurrence]
+#endif
 hsRecFieldPatNames HsRecField {..} = [fieldOccName False $ unLoc hsRecFieldLbl]
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+hsExprNames :: LHsExpr GhcRn -> [NameOccurrence]
+#else
 hsExprNames :: LHsExpr Name -> [NameOccurrence]
+#endif    
 hsExprNames (L _span (HsVar name)) =
   [ NameOccurrence
     { locatedName = Just <$> name
@@ -174,9 +211,13 @@ hsExprNames (L _span (HsRecFld (Ambiguous (L span _) _name))) =
   ]
 hsExprNames _ = []
 
-matchGroupNames :: MatchGroup Name (LHsExpr Name) -> [NameOccurrence]
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+matchGroupNames :: MatchGroup GhcRn (LHsExpr GhcRn) -> [NameOccurrence]
+#else
+matchGroupNames :: MatchGroup Name (LHsExpr Name) -> [NameOccurrence]    
+#endif
 matchGroupNames =
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)      
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)  
   mapMaybe (fmap toNameOcc . matchContextName . m_ctxt . unLoc) .
 #else
   mapMaybe (fmap toNameOcc . matchFixityName . m_fixity . unLoc) .
@@ -184,20 +225,24 @@ matchGroupNames =
   unLoc . mg_alts
   where
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)    
-    matchContextName :: HsMatchContext Name -> Maybe (Located Name)
+    --matchContextName :: HsMatchContext Name -> Maybe (Located Name)
     matchContextName (FunRhs name _ _bool) = Just name
     matchContextName _ = Nothing   
 #else
-    matchFixityName :: MatchFixity Name -> Maybe (Located Name)
+    --matchFixityName :: MatchFixity Name -> Maybe (Located Name)
     matchFixityName NonFunBindMatch = Nothing
     matchFixityName (FunBindMatch name _bool) = Just name
 #endif
-    toNameOcc :: Located Name -> NameOccurrence
+    --toNameOcc :: Located Name -> NameOccurrence
     toNameOcc n =
       NameOccurrence
-        {locatedName = Just <$> n, description = "Match", isBinder = True}
+        {locatedName = Just <$> n, description = "Match", isBinder = True}        
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+bindNames :: LHsBindLR GhcRn GhcRn -> [NameOccurrence]
+#else
 bindNames :: LHsBindLR Name Name -> [NameOccurrence]
+#endif
 bindNames (L _span (PatSynBind PSB {..})) =
   [ NameOccurrence
       { locatedName = Just <$> psb_id
@@ -218,7 +263,11 @@ hsPatSynDetailsNames =
          }) .
   hsPatSynDetails
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+importNames :: IE GhcRn -> [NameOccurrence]
+#else
 importNames :: IE Name -> [NameOccurrence]
+#endif
 importNames =
   map
     (\name ->
@@ -229,7 +278,12 @@ importNames =
         }) .
   ieLocNames
 
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+patNames :: LPat GhcRn -> [NameOccurrence]
+#else
 patNames :: LPat Name -> [NameOccurrence]
+#endif    
 patNames (L _span (VarPat name)) =
   [ NameOccurrence
     { locatedName = Just <$> name
@@ -260,7 +314,12 @@ patNames (L _span (NPlusKPat name _ _ _ _ _)) =
   ]
 patNames _ = []
 
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+sigNames :: LSig GhcRn -> [NameOccurrence]
+#else
 sigNames :: LSig Name -> [NameOccurrence]
+#endif    
 sigNames (L _span (TypeSig names _)) =
   map
     (\n ->
@@ -332,7 +391,11 @@ sigNames (L _span (MinimalSig _ (L _ boolFormula))) =
     boolFormulaNames (Parens (L _ f)) = boolFormulaNames f
 sigNames (L _ _) = []
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+hsTypeNames :: LHsType GhcRn -> [NameOccurrence]
+#else
 hsTypeNames :: LHsType Name -> [NameOccurrence]
+#endif 
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 hsTypeNames (L _span (HsTyVar _promoted name)) =
 #else
@@ -382,7 +445,12 @@ hsTypeNames (L span (HsTupleTy tupleSort types))
 --hsTypeNames (L span (HsExplicitTupleTy _kind types)) = ...
 hsTypeNames _ = []
 
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+hsTyVarBndrNames :: HsTyVarBndr GhcRn -> [NameOccurrence]
+#else
 hsTyVarBndrNames :: HsTyVarBndr Name -> [NameOccurrence]
+#endif
 hsTyVarBndrNames (UserTyVar n) =
   [ NameOccurrence
     { locatedName = Just <$> n
@@ -398,7 +466,11 @@ hsTyVarBndrNames (KindedTyVar n _) =
     }
   ]
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+tyClDeclNames :: LTyClDecl GhcRn -> [NameOccurrence]
+#else
 tyClDeclNames :: LTyClDecl Name -> [NameOccurrence]
+#endif    
 tyClDeclNames (L _span DataDecl {..}) =
   [ NameOccurrence
     { locatedName = Just <$> tcdLName
@@ -432,7 +504,11 @@ tyClDeclNames (L _span ClassDecl {..}) =
       }
 tyClDeclNames _ = []
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+familyDeclNames :: FamilyDecl GhcRn -> [NameOccurrence]
+#else
 familyDeclNames :: FamilyDecl Name -> [NameOccurrence]
+#endif    
 familyDeclNames FamilyDecl {..} =
   [ NameOccurrence
     { locatedName = Just <$> fdLName
@@ -441,6 +517,26 @@ familyDeclNames FamilyDecl {..} =
     }
   ]
 
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+familyEqNames :: FamEqn GhcRn (HsTyPats GhcRn) (LHsType GhcRn) -> [NameOccurrence]
+familyEqNames FamEqn {feqn_tycon = tyCon} =
+  [ NameOccurrence
+    { locatedName = Just <$> tyCon
+    , description = "FamEqn"
+    , isBinder = False
+    }
+  ]
+
+dataEqNames :: FamEqn GhcRn (HsTyPats GhcRn) (HsDataDefn GhcRn) -> [NameOccurrence]
+dataEqNames FamEqn {feqn_tycon = tyCon} =
+  [ NameOccurrence
+    { locatedName = Just <$> tyCon
+    , description = "FamEqn"
+    , isBinder = False
+    }
+  ]
+#else    
 tyFamilyEqNames :: TyFamEqn Name (HsTyPats Name) -> [NameOccurrence]
 tyFamilyEqNames TyFamEqn {tfe_tycon = tyCon} =
   [ NameOccurrence
@@ -467,8 +563,13 @@ dataFamInstDeclNames DataFamInstDecl {dfid_tycon = tyCon} =
     , isBinder = False
     }
   ]
+#endif 
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+conDeclNames :: ConDecl GhcRn -> [NameOccurrence]
+#else
 conDeclNames :: ConDecl Name -> [NameOccurrence]
+#endif
 conDeclNames con =
   case con of
     ConDeclGADT {con_names = names} ->
@@ -488,11 +589,28 @@ conDeclNames con =
         }
       ]
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+foreignDeclNames :: ForeignDecl GhcRn -> [NameOccurrence]
+#else
 foreignDeclNames :: ForeignDecl Name -> [NameOccurrence]
+#endif    
 foreignDeclNames decl =
   [ NameOccurrence
     { locatedName = Just <$> fd_name decl
     , description = "ForeignDecl"
     , isBinder = True
     }
+  ]
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+roleAnnotationNames :: RoleAnnotDecl GhcRn -> [NameOccurrence]
+#else
+roleAnnotationNames :: RoleAnnotDecl Name -> [NameOccurrence]
+#endif
+roleAnnotationNames (RoleAnnotDecl n _) =
+  [ NameOccurrence
+      { locatedName = Just <$> n
+      , description = "RoleAnnotDecl"
+      , isBinder = False
+      }
   ]
