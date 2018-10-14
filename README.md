@@ -40,12 +40,18 @@ cd haskell-code-explorer
 
 To build Haskell code explorer Stack ([https://docs.haskellstack.org/en/stable/README/](https://docs.haskellstack.org/en/stable/README/)) is needed.
 
-At the moment Haskell code explorer supports GHC 8.2.2 and 8.0.2.
+At the moment Haskell code explorer supports GHC 8.4.3, GHC 8.2.2 and 8.0.2.
+
+For GHC 8.4.3:
+
+```bash
+stack install
+```
 
 For GHC 8.2.2:
 
 ```bash
-stack install
+stack --stack-yaml=stack-8.2.2.yaml install
 ```
 
 For GHC 8.0.2:
@@ -53,7 +59,6 @@ For GHC 8.0.2:
 ```bash
 stack --stack-yaml=stack-8.0.2.yaml install
 ```
-
 
 ## Indexing source code of a Cabal package
 
@@ -63,10 +68,10 @@ A package should be built using either cabal-install or stack before indexing (`
 
 `haskell-code-indexer` requires globally installed GHC and cabal-install (`cabal`). The reason for this is that `haskell-code-indexer` uses `cabal-helper` library [https://hackage.haskell.org/package/cabal-helper](https://hackage.haskell.org/package/cabal-helper) to get package build information. `cabal-helper` builds (at runtime) an executable linked against a version of Cabal library that was used to configure the package.
 
-If there is no globally installed GHC on the system, then it is possible to use `stack exec` command ([https://docs.haskellstack.org/en/stable/GUIDE/#exec](https://docs.haskellstack.org/en/stable/GUIDE/#exec)) that adds a path to GHC binaries installed by Stack to `PATH` environment variable :
+If there is no globally installed GHC on the system, then it is possible to use `stack exec` command ([https://docs.haskellstack.org/en/stable/GUIDE/#exec](https://docs.haskellstack.org/en/stable/GUIDE/#exec)) that adds a path to GHC binaries installed by Stack to `PATH` environment variable:
 
 ```bash
-stack --resolver=lts-11.3 exec --no-ghc-package-path haskell-code-indexer -- INDEXER_OPTIONS
+stack --resolver=lts-12.12 exec --no-ghc-package-path haskell-code-indexer -- INDEXER_OPTIONS
 ```
 
 ### Examples :
