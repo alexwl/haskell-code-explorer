@@ -62,6 +62,7 @@ import GHC
   , TyFamEqn(..)
 #endif
   , Type
+  , RoleAnnotDecl(..)
   , unLoc
   )
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
@@ -111,7 +112,8 @@ namesFromRenamedSource =
      hsRecFieldExprNames `extQ`
      hsRecAmbFieldExprNames `extQ`
      hsRecFieldPatNames `extQ`
-     foreignDeclNames)
+     foreignDeclNames `extQ`
+     roleAnnotationNames)
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 fieldOccName :: Bool -> FieldOcc GhcRn -> NameOccurrence
@@ -598,4 +600,17 @@ foreignDeclNames decl =
     , description = "ForeignDecl"
     , isBinder = True
     }
+  ]
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+roleAnnotationNames :: RoleAnnotDecl GhcRn -> [NameOccurrence]
+#else
+roleAnnotationNames :: RoleAnnotDecl Name -> [NameOccurrence]
+#endif
+roleAnnotationNames (RoleAnnotDecl n _) =
+  [ NameOccurrence
+      { locatedName = Just <$> n
+      , description = "RoleAnnotDecl"
+      , isBinder = False
+      }
   ]
