@@ -23,7 +23,6 @@ import HaskellCodeExplorer.Types
   )
 import System.FilePath (normalise,takeExtension,takeFileName)
 
-
 -- | Finds locations of line pragmas and creates an index
 createSourceCodeTransformation ::
      HaskellModulePath -> T.Text -> T.Text -> (SourceCodeTransformation, T.Text)
@@ -50,7 +49,14 @@ createSourceCodeTransformation currentModulePath originalSourceCode sourceCodeAf
       pragmaPath = filePath :: LinePragma -> HaskellFilePath
       currentFileExtension =
         takeExtension . T.unpack . getHaskellFilePath $ currentFilePath
-      standardHeaderFiles = ["stdc-predef.h", "cabal_macros.h", "ghcversion.h"]      
+      standardHeaderFiles =
+        [ "stdc-predef.h"
+        , "cabal_macros.h"
+        , "ghcversion.h"
+        , "HsVersions.h"
+        , "ghc_boot_platform.h"
+        , "ghcautoconf.h"
+        ]
       hasIncludedFiles =
         L.any
           ((\path ->
