@@ -42,6 +42,7 @@ import GHC
   , LSig
   , LTyClDecl
   , Located
+  , HsBracket(..)  
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
   , HsMatchContext(..)
   , Match(..)
@@ -76,6 +77,16 @@ import TysWiredIn
   , typeNatKind
   , typeSymbolKind
   )
+import SrcLoc
+  ( mkRealSrcSpan
+  , mkRealSrcLoc
+  , realSrcSpanEnd
+  , realSrcSpanStart
+  , srcLocCol
+  , srcLocFile
+  , srcLocLine
+  , SrcSpan(..)
+  )  
 data NameOccurrence
   = NameOccurrence { locatedName :: Located (Maybe Name)
                    , description :: T.Text
@@ -209,6 +220,28 @@ hsExprNames (L _span (HsRecFld (Ambiguous (L span _) _name))) =
     , isBinder = False
     }
   ]
+hsExprNames (L span (HsRnBracketOut (VarBr quote name) _)) =
+  case span of
+    RealSrcSpan realSpan ->
+      let start = realSrcSpanStart realSpan
+          end = realSrcSpanEnd realSpan
+          offset =
+            if quote
+              then 1 -- 'x
+              else 2 -- ''T
+          start' =
+            mkRealSrcLoc
+              (srcLocFile start)
+              (srcLocLine start)
+              (srcLocCol start + offset)
+          span' = RealSrcSpan $ mkRealSrcSpan start' end
+       in [ NameOccurrence
+              { locatedName = L span' (Just name)
+              , description = "VarBr"
+              , isBinder = False
+              }
+          ]
+    _ -> []
 hsExprNames _ = []
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
