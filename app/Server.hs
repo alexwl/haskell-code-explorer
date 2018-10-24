@@ -38,7 +38,7 @@ import Data.Hashable (Hashable)
 import qualified Data.IntervalMap.Strict as IVM
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
-import Data.Maybe(fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 import qualified GHC.Compact as C
 import Data.Functor.Identity(Identity(..))
@@ -696,9 +696,10 @@ getReferences packageId externalId mbPage mbPerPage =
                     in [SourceFile path refs]
                  _ -> []) $
           groupWith refModulePath $
-          map
+          mapMaybe
             (mkReferenceWithSource packageInfo)
-            (paginatedItems paginatedReferences)
+            (L.groupBy (\span1 span2 -> HCE.line span1 == HCE.line span2) $
+             paginatedItems paginatedReferences)
       Nothing ->
         error404 $
         BSL.concat
@@ -708,46 +709,50 @@ getReferences packageId externalId mbPage mbPerPage =
 
 mkReferenceWithSource ::
      HCE.PackageInfo HCE.CompactModuleInfo
-  -> HCE.IdentifierSrcSpan
-  -> ReferenceWithSource
-mkReferenceWithSource packageInfo idSrcSpan =
-  let mbModule =        
+  -> [HCE.IdentifierSrcSpan]
+  -> Maybe ReferenceWithSource
+mkReferenceWithSource packageInfo spans@(span:_) =
+  let mbModule =
         HM.lookup
-          (HCE.modulePath (idSrcSpan :: HCE.IdentifierSrcSpan))
+          (HCE.modulePath (span :: HCE.IdentifierSrcSpan))
           (HCE.moduleMap (packageInfo :: HCE.PackageInfo HCE.CompactModuleInfo))
    in case mbModule of
         Just modInfo ->
           let sourceCodeHtml =
                 buildHtmlCodeSnippet
                   (HCE.source (modInfo :: HCE.CompactModuleInfo))
-                  (HCE.line (idSrcSpan :: HCE.IdentifierSrcSpan))
-                  (HCE.startColumn (idSrcSpan :: HCE.IdentifierSrcSpan))
-                  (HCE.endColumn (idSrcSpan :: HCE.IdentifierSrcSpan))
-           in ReferenceWithSource sourceCodeHtml idSrcSpan
-        _ -> ReferenceWithSource "" idSrcSpan
+                  (HCE.line (span :: HCE.IdentifierSrcSpan))
+                  (map
+                     (\HCE.IdentifierSrcSpan {..} -> (startColumn, endColumn))
+                     spans)
+           in Just $ ReferenceWithSource sourceCodeHtml span
+        _ -> Just $ ReferenceWithSource "" span
+mkReferenceWithSource _ _ = Nothing
 
-buildHtmlCodeSnippet :: V.Vector T.Text -> Int -> Int -> Int -> T.Text
-buildHtmlCodeSnippet sourceLines lineNumber startColumn endColumn =
+buildHtmlCodeSnippet :: V.Vector T.Text -> Int -> [(Int, Int)] -> T.Text
+buildHtmlCodeSnippet sourceLines lineNumber positions =
   toStrict $
   renderHtml $ do
     mkLineNumber (lineNumber - 1) >>
       Html.toHtml
         (T.append (fromMaybe "" $ (V.!?) sourceLines (lineNumber - 2)) "\n")
     mkLineNumber lineNumber >>
-      highlightIdentifier
+      highlightIdentifiers
         (T.append (fromMaybe "" $ (V.!?) sourceLines (lineNumber - 1)) "\n")
     mkLineNumber (lineNumber + 1) >>
       Html.toHtml (T.append (fromMaybe "" $ (V.!?) sourceLines lineNumber) "\n")
   where
     mkLineNumber :: Int -> Html.Html
     mkLineNumber i = Html.toHtml (show i ++ "  ")
-    highlightIdentifier :: T.Text -> Html.Html
-    highlightIdentifier line =
-      let (startLine, remaining) = T.splitAt (startColumn - 1) line
-          (identifier, endLine) = T.splitAt (endColumn - startColumn) remaining
-       in Html.toHtml startLine >> Html.b (Html.toHtml identifier) >>
-          Html.toHtml endLine
-        
+    highlightIdentifiers :: T.Text -> Html.Html
+    highlightIdentifiers line =
+      mapM_
+        (\(text, _, mbId) ->
+           case mbId of
+             Just _ -> Html.b (Html.toHtml text)
+             Nothing -> Html.toHtml text) $
+      HCE.tokenize line (map (\pos -> (pos, ())) positions)
+
 findIdentifiers ::
      PackageId
   -> T.Text
