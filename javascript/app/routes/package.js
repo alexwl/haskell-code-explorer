@@ -7,9 +7,6 @@ export default Ember.Route.extend({
     return this.get('store').loadPackage(params.packageId)
       .catch((e) => {console.log(e);this.transitionTo("/package-not-found");});
   },
-  afterModel(model) {
-    document.title = model.id;
-  },
   setupController(controller, model) {
     this._super(controller, model);
     const packageId = this.modelFor('package').id;
@@ -17,7 +14,7 @@ export default Ember.Route.extend({
     controller.set('createSearchUrlFunction',(query) => {
       return urls.identifierSearchUrl(packageId,query);
     });
-  },
+  },  
   actions : {
     openFile  (filePath) {
       this.transitionTo('package.show.file',filePath);
@@ -33,6 +30,10 @@ export default Ember.Route.extend({
       this.set('controller.occName',occName);
       this.set('controller.bottomPanelVisible',true);
       this.set('controller.referencesUrl',urls.referencesUrl(packageId,externalId)+"?per_page=50");
+    },
+    didTransition() {
+      document.title = this.currentModel.id;
+      return true;
     }
   }
 });
