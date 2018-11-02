@@ -31,7 +31,7 @@ module.exports = function(environment) {
       staticUrlPrefix: "/files",
       apiUrlPrefix: "/api",
       haskellCodeExplorerDirectory: ".haskell-code-explorer",
-      title: "Haskell code explorer"
+      title: "Haskell Code Explorer"
     }
   };
 

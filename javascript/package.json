@@ -1,7 +1,7 @@
 {
   "name": "haskell-code-explorer",
   "version": "0.0.1",
-  "description": "Haskell code explorer",
+  "description": "Haskell Code Explorer",
   "private": false,
   "license": "MIT",
   "author": "alexwl",

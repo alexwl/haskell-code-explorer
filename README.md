@@ -1,16 +1,18 @@
-# Haskell code explorer
+# Haskell Code Explorer
 
-Haskell code explorer is a web application for exploring and understanding Haskell codebases. It provides IDE-like code intelligence features such as types and documentation on hover, "go to definition", "find references" and semantic highlighting.
+Haskell Code Explorer is a web application for exploring and understanding Haskell codebases. It provides IDE-like code intelligence features such as types and documentation on hover, "go to definition", "find references" and semantic highlighting.
 
-Examples :
+Examples:
 
 - [https://haskell-code-explorer.mfix.io/package/stm-2.4.5.0/show/Control/Concurrent/STM/TQueue.hs#L87](https://haskell-code-explorer.mfix.io/package/stm-2.4.5.0/show/Control/Concurrent/STM/TQueue.hs#L87)
 - [https://haskell-code-explorer.mfix.io/package/async-2.1.1.1/show/Control/Concurrent/Async.hs#L251](https://haskell-code-explorer.mfix.io/package/async-2.1.1.1/show/Control/Concurrent/Async.hs#L251)
 - [https://haskell-code-explorer.mfix.io/package/haxl-0.5.1.0/show/Haxl/Core/Monad.hs#L569](https://haskell-code-explorer.mfix.io/package/haxl-0.5.1.0/show/Haxl/Core/Monad.hs#L569)
 
-![Haskell code explorer](https://haskell-code-explorer.mfix.io/screenshot.png)
+![Haskell Code Explorer](https://haskell-code-explorer.mfix.io/screenshot.png)
 
-Haskell code explorer consists of an indexer, an HTTP server, and a JavaScript application. The indexer uses GHC API to create a data structure that contains detailed information about the source code of a Cabal package. The HTTP server reads that data structure into memory and responds to HTTP requests from the JavaScript application.
+The public instance of Haskell Code Explorer is available at [https://haskell-code-explorer.mfix.io](https://haskell-code-explorer.mfix.io). It contains core libraries (ghc, base, etc.) and a subset of packages from a Stackage snapshot.
+
+Haskell Code Explorer consists of an indexer, an HTTP server, and a JavaScript application. The indexer uses GHC API to create a data structure that contains detailed information about the source code of a Cabal package. The HTTP server reads that data structure into memory and responds to HTTP requests from the JavaScript application.
 
 ## Motivation
 
@@ -18,7 +20,7 @@ Reading and understanding code is an essential part of the software development 
 
 ## Features
 
-* Types (actual type, instantiated type, instance resolution tree) and documentation on hover. Types are interactive : left-click on type constructor -> go to definition, right click on type constructor -> show kind signature.<br />
+* Types (actual type, instantiated type, instance resolution tree) and documentation on hover. Types are interactive: left-click on a type constructor -> go to definition, right click on a type constructor -> show kind signature.<br />
   ![Hover](https://haskell-code-explorer.mfix.io/hover.png)
 
 * Go to definition
@@ -38,9 +40,9 @@ git clone https://github.com/alexwl/haskell-code-explorer
 cd haskell-code-explorer
 ```
 
-To build Haskell code explorer Stack ([https://docs.haskellstack.org/en/stable/README/](https://docs.haskellstack.org/en/stable/README/)) is needed.
+To build Haskell Code Explorer Stack ([https://docs.haskellstack.org/en/stable/README/](https://docs.haskellstack.org/en/stable/README/)) is needed.
 
-At the moment Haskell code explorer supports GHC 8.4.3, GHC 8.2.2 and 8.0.2.
+At the moment Haskell Code Explorer supports GHC 8.4.3, GHC 8.2.2 and 8.0.2.
 
 For GHC 8.4.3:
 
@@ -74,7 +76,7 @@ If there is no globally installed GHC on the system, then it is possible to use 
 stack --resolver=lts-12.12 exec --no-ghc-package-path haskell-code-indexer -- INDEXER_OPTIONS
 ```
 
-### Examples :
+### Examples
 
 Show all indexer options:
 ```bash
@@ -100,21 +102,21 @@ haskell-code-indexer --package PATH --dist $(stack path --dist-dir)
 
 `haskell-code-server` executable reads the package index created by `haskell-code-indexer` and starts the HTTP server. The HTTP server responds to API requests and serves static assets (JavaScript files that are in `haskell-code-explorer/javascript/release` directory).
 
-### Examples :
+### Examples
 
-Show all server options :
+Show all server options:
 
 ```bash
 haskell-code-server -h
 ```
 
-Load the indexed package and start the server :
+Load the indexed package and start the server:
 
 ```bash
 haskell-code-server --package PATH --port 8080 --js-path haskell-code-explorer/javascript/release
 ```
 
-Load multiple indexed packages and start the server :
+Load multiple indexed packages and start the server:
 
 ```bash
 haskell-code-server --package PATH1 --package PATH2 --package PATH3 --port 8080 --js-path haskell-code-explorer/javascript/release
