@@ -155,8 +155,10 @@ moduleInfoSpec modInfo =
       HCE.idOccMap (modInfo :: HCE.ModuleInfo) `shouldBe` testIdOccMap
 
 stackYamlArg :: [String]
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,4,0)
 stackYamlArg = []
+#elif MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+stackYamlArg = ["--stack-yaml=stack-8.4.3.yaml" ]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 stackYamlArg = ["--stack-yaml=stack-8.2.2.yaml" ]
 #else

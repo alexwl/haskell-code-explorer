@@ -42,12 +42,18 @@ cd haskell-code-explorer
 
 To build Haskell Code Explorer Stack ([https://docs.haskellstack.org/en/stable/README/](https://docs.haskellstack.org/en/stable/README/)) is needed.
 
-At the moment Haskell Code Explorer supports GHC 8.4.3, GHC 8.2.2 and 8.0.2.
+At the moment Haskell Code Explorer supports GHC 8.4.4, GHC 8.4.3, GHC 8.2.2, and 8.0.2.
+
+For GHC 8.4.4:
+
+```bash
+stack install
+```
 
 For GHC 8.4.3:
 
 ```bash
-stack install
+stack --stack-yaml=stack-8.4.3.yaml install
 ```
 
 For GHC 8.2.2:
@@ -64,7 +70,7 @@ stack --stack-yaml=stack-8.0.2.yaml install
 
 ## Indexing source code of a Cabal package
 
-`haskell-code-indexer` executable is responsible for indexing packages (by default index is saved to `.haskell-code-explorer` directory).
+`haskell-code-indexer` executable is responsible for indexing packages (by default, index is saved to `.haskell-code-explorer` directory).
 
 A package should be built using either cabal-install or stack before indexing (`cabal new-build`,`cabal build`, or `stack build` command should be executed).
 
@@ -83,7 +89,7 @@ Show all indexer options:
 haskell-code-indexer -h
 ```
 
-Index package :
+Index package:
 ```bash
 haskell-code-indexer --package PATH
 ```
