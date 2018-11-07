@@ -109,6 +109,7 @@ executable haskell-code-server
                    , optparse-applicative
                    , data-default
                    , pagination
+                   , file-embed
   if impl(ghc >= 8.4.3)
     build-depends: ghc-compact
                                      

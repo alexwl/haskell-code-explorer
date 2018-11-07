@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -29,7 +30,6 @@ import Control.Monad.Except (ExceptT(..))
 import Control.Monad.Reader (MonadIO, MonadReader, ReaderT(..), asks, liftIO)
 import qualified Data.Aeson as A
 import qualified Data.ByteString as BS
-import qualified Data.Vector as V
 import qualified Data.ByteString.Lazy as BSL
 import Data.Default (def)
 import Data.Either (lefts, rights)
@@ -39,6 +39,7 @@ import qualified Data.IntervalMap.Strict as IVM
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, mapMaybe)
+import qualified Data.Vector as V
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 import qualified GHC.Compact as C
 import Data.Functor.Identity(Identity(..))
@@ -149,6 +150,7 @@ import System.Log.FastLogger
   )
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import qualified Text.Blaze.Html5 as Html hiding (html, source)
+import Data.FileEmbed (embedDir, embedFile)
 
 --------------------------------------------------------------------------------
 -- Server config
@@ -948,7 +950,19 @@ staticMiddleware _ _ mbJsDistPath _app req callback =
       if exists
          then callback $ sendFile path
          else callback $ sendFile (jsDistPath </> "index.html")
-    Nothing -> callback fileNotFound
+    Nothing -> do
+      let path = T.unpack $ T.intercalate "/" $ pathInfo req
+      if path == ""
+        then callback $ sendEmbeddedFile "index.html" indexHtml
+        else case HM.lookup path staticAssets of
+          Just bs -> callback $ sendEmbeddedFile path bs
+          Nothing -> callback $ sendEmbeddedFile "index.html" indexHtml
+
+staticAssets :: HM.HashMap FilePath BS.ByteString
+staticAssets = HM.fromList $(embedDir "javascript/release")
+
+indexHtml :: BS.ByteString
+indexHtml = $(embedFile "javascript/release/index.html")
 
 sendFile :: FilePath -> Response
 sendFile path =
@@ -957,6 +971,13 @@ sendFile path =
     [(hContentType, defaultMimeLookup $ T.pack $ takeFileName path)]
     path
     Nothing
+
+sendEmbeddedFile :: FilePath -> BS.ByteString -> Response
+sendEmbeddedFile path bs =
+  responseLBS
+    status200
+    [(hContentType, defaultMimeLookup $ T.pack $ takeFileName path)]
+    (BSL.fromStrict bs)    
 
 fileNotFound :: Response
 fileNotFound =

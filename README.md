@@ -119,13 +119,13 @@ haskell-code-server -h
 Load the indexed package and start the server:
 
 ```bash
-haskell-code-server --package PATH --port 8080 --js-path haskell-code-explorer/javascript/release
+haskell-code-server --package PATH --port 8080
 ```
 
 Load multiple indexed packages and start the server:
 
 ```bash
-haskell-code-server --package PATH1 --package PATH2 --package PATH3 --port 8080 --js-path haskell-code-explorer/javascript/release
+haskell-code-server --package PATH1 --package PATH2 --package PATH3 --port 8080
 ```
 
 Open [http://localhost:8080](http://localhost:8080) in a browser to explore source code of the package.
