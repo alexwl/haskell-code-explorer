@@ -172,7 +172,7 @@ import Name
   , isSystemName
   , isTvNameSpace
   , isTyConName
-  , isVarNameSpace
+  , isValNameSpace
   , isWiredInName
   , mkInternalName
   , mkOccName
@@ -360,9 +360,9 @@ nameSort n =
   
 occNameNameSpace :: OccName -> HCE.NameSpace
 occNameNameSpace n
-  | isVarNameSpace (occNameSpace n) = HCE.VarName
   | isDataConNameSpace (occNameSpace n) = HCE.DataName
   | isTvNameSpace (occNameSpace n) = HCE.TvName
+  | isValNameSpace (occNameSpace n) = HCE.VarName  
   | otherwise = HCE.TcClsName
 
 -- Two 'Id''s may have different types even though they have the same 'Unique'.

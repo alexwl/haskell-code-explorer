@@ -660,7 +660,7 @@ addIdentifierToMaps environment idSrcSpanMap idMaps@(idInfoMap, idOccMap) nameOc
      nameOcc =
     case nameOcc of
       TyLitOccurrence {kind = kind} ->
-        addTypeToMaps
+        addNameToMaps
           environment
           idMaps
           (Just kind)
@@ -707,11 +707,11 @@ addIdentifierToMaps environment idSrcSpanMap idMaps@(idInfoMap, idOccMap) nameOc
                     [((startCol, endCol), idOcc)]
                     idOccMap
              in (idInfoMap', idOccMap')
-          Nothing -- type variable
+          Nothing -- type variable or an internal identifier in a pattern synonym
            ->
             case unLoc $ locatedName nameOcc of
               Just name ->
-                addTypeToMaps
+                addNameToMaps
                   environment
                   idMaps
                   Nothing
@@ -723,7 +723,7 @@ addIdentifierToMaps environment idSrcSpanMap idMaps@(idInfoMap, idOccMap) nameOc
               Nothing -> idMaps             
 addIdentifierToMaps _ _ idMaps _ = idMaps
 
-addTypeToMaps ::
+addNameToMaps ::
      Environment
   -> (HCE.IdentifierInfoMap, HCE.IdentifierOccurrenceMap)
   -> Maybe Type
@@ -733,7 +733,7 @@ addTypeToMaps ::
   -> Int
   -> Int
   -> (HCE.IdentifierInfoMap, HCE.IdentifierOccurrenceMap)
-addTypeToMaps environment (idInfoMap, idOccMap) mbKind mbName descr lineNumber colStart colEnd =
+addNameToMaps environment (idInfoMap, idOccMap) mbKind mbName descr lineNumber colStart colEnd =
   let flags = envDynFlags environment
       idInfoMap' =
         maybe
@@ -754,7 +754,15 @@ addTypeToMaps environment (idInfoMap, idOccMap) mbKind mbName descr lineNumber c
           , idOccType = mkType flags <$> mbKind
           , typeArguments = Nothing
           , description = descr
-          , sort = HCE.TypeId
+          , sort =
+              maybe
+                HCE.TypeId
+                (\name ->
+                   case occNameNameSpace . nameOccName $ name of
+                     HCE.VarName -> HCE.ValueId
+                     HCE.DataName -> HCE.ValueId
+                     _ -> HCE.TypeId)
+                mbName
           }
       idOccMap' =
         IM.insertWith
