@@ -413,7 +413,10 @@ indexBuildComponent sourceCodePreprocessing currentPackageId componentId deps@(f
       logDebugN (T.append "Modules : " $ T.pack $ show modules)
       logDebugN (T.append "GHC options : " $ T.pack $ show options)
       flags <- getSessionDynFlags
-      (flags', _, _) <- parseDynamicFlagsCmdLine flags (L.map noLoc options)
+      (flags', _, _) <-
+        parseDynamicFlagsCmdLine
+          flags
+          (L.map noLoc . L.filter ((/=) "-Werror") $ options) -- -Werror flag makes warnings fatal 
       (flags'', _) <- liftIO $ initPackages flags'
       logFn <- askLoggerIO
       let logAction ::
@@ -464,7 +467,7 @@ indexBuildComponent sourceCodePreprocessing currentPackageId componentId deps@(f
                  if c == '-'
                    then '_'
                    else c)
-              (T.unpack (HCE.name (currentPackageId :: HCE.PackageId)))      
+              (T.unpack (HCE.name (currentPackageId :: HCE.PackageId)))
       (modSumWithPath, modulesNotFound) <-
         (\(mods, notFound) ->
            ( L.reverse .
@@ -487,7 +490,7 @@ indexBuildComponent sourceCodePreprocessing currentPackageId componentId deps@(f
              (\modSum ->
                 pathsModuleName /=
                 (moduleNameString . moduleName $ ms_mod modSum))
-             topSortMods)      
+             topSortMods)
       unless (null modulesNotFound) $
         logErrorN $
         T.append
