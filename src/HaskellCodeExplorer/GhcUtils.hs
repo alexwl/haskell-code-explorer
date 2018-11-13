@@ -1110,7 +1110,13 @@ hsDocsToDocH :: DynFlags -> GlobalRdrEnv -> [HsDocString] -> Doc Name
 hsDocsToDocH flags rdrEnv =
   rename flags rdrEnv .
   overIdentifier (parseIdent flags) .
-  _doc . parseParas . concatMap (unpackFS . (\(HsDocString s) -> s))
+  _doc
+#if MIN_VERSION_haddock_library(1,6,0)
+    . parseParas Nothing
+#else
+    . parseParas
+#endif
+    . concatMap (unpackFS . (\(HsDocString s) -> s))
 
 parseIdent :: DynFlags -> String -> Maybe RdrName
 parseIdent dflags str0 =
