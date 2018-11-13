@@ -22,7 +22,7 @@ import Control.Exception
   , try
   )
 import Control.Monad (foldM, join, unless)
-import Control.Monad.Extra (findM)
+import Control.Monad.Extra (anyM, findM)
 import Control.Monad.Logger
   ( LoggingT(..)
   , MonadLogger(..)
@@ -95,8 +95,7 @@ import Outputable (PprStyle, SDoc, neverQualify, showSDocForUser)
 import Packages (initPackages)
 import Prelude hiding (id)
 import System.Directory
-  ( doesFileExist
-  , doesFileExist
+  ( doesFileExist  
   , findExecutable
   , setCurrentDirectory
   , getCurrentDirectory
@@ -112,7 +111,7 @@ import System.FilePath
   , splitPath
   , takeExtension
   , takeBaseName
-  , splitDirectories
+  , splitDirectories  
   )
 import System.Process (readProcess)
 
@@ -313,7 +312,12 @@ addReferencesFromModule references modInfo@HCE.ModuleInfo {..} =
 
 findDistDirectory :: FilePath -> LoggingT IO FilePath
 findDistDirectory packagePath = do
-  hasStackYaml <- liftIO $ doesFileExist (packagePath </> "stack.yaml")
+  let parents =
+        reverse . map joinPath . filter (not . null) . L.inits . splitPath $
+        packagePath
+  -- e.g., ["/dir/subdir/subsubdir","/dir/subdir/","/dir/","/"]
+  hasStackYaml <-
+    liftIO $ anyM (\path -> doesFileExist (path </> "stack.yaml")) parents
   mbStackExecutable <- liftIO $ findExecutable "stack"
   let defaultDistDir = packagePath </> "dist"
   case (hasStackYaml, mbStackExecutable) of
