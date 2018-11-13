@@ -1,0 +1,21 @@
+-- These are project-fixed settings and should not contain developer specific settings.
+--
+-- Developer specific settings can be configured in cabal.project.local (e.g. optimization level)
+-- either manually or through 'cabal new-configure'.
+--
+-- Refer to the documentation: https://cabal.readthedocs.io/en/latest/nix-local-build.html#cabal-new-configure
+--                             https://cabal.readthedocs.io/en/latest/nix-local-build.html#configuring-builds-with-cabal-project
+--
+-- A common config might be:
+--   -- all local packages
+--   optimization: 0
+--   
+--   -- always build dependencies with highest optimization
+--   package *
+--     optimization: 2
+
+with-compiler: ghc-8.4.4
+
+packages: .
+          vendor/cabal-helper-0.8.1.2
+
