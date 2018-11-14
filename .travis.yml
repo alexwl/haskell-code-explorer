@@ -10,6 +10,7 @@ matrix:
 cache:
   directories:
     - '$HOME/.stack'
+    - '$HOME/.cabal'
     - '$HOME/.cache' # cabal-helper
     - '$TRAVIS_BUILD_DIR/.stack-work'
     - '$TRAVIS_BUILD_DIR/vendor/cabal-helper-0.8.1.2/.stack-work'
@@ -21,4 +22,5 @@ before_install:
 
 script:
 - stack $ARGS --no-terminal build
+- stack $ARGS --no-terminal exec --no-ghc-package-path cabal -- update
 - stack $ARGS --no-terminal test || stack $ARGS exec --no-ghc-package-path --no-terminal $(stack path --dist-dir)/build/test/test
