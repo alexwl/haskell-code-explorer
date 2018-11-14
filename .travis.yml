@@ -20,7 +20,9 @@ before_install:
 - mkdir -p ~/.local/bin
 - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
+install:
+- travis_retry stack $ARGS --no-terminal exec --no-ghc-package-path cabal -- update
+
 script:
 - stack $ARGS --no-terminal build
-- stack $ARGS --no-terminal exec --no-ghc-package-path cabal -- update
 - stack $ARGS --no-terminal test || stack $ARGS exec --no-ghc-package-path --no-terminal $(stack path --dist-dir)/build/test/test
