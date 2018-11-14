@@ -1,0 +1,24 @@
+language: generic
+sudo: false
+
+matrix:
+  include:
+    - env: ARGS=""
+    - env: ARGS="--stack-yaml=stack-8.2.2.yaml"
+    - env: ARGS="--stack-yaml=stack-8.0.2.yaml"
+
+cache:
+  directories:
+    - '$HOME/.stack'
+    - '$HOME/.cache' # cabal-helper
+    - '$TRAVIS_BUILD_DIR/.stack-work'
+    - '$TRAVIS_BUILD_DIR/vendor/cabal-helper-0.8.1.2/.stack-work'
+
+before_install:
+- export PATH=$HOME/.local/bin:$PATH
+- mkdir -p ~/.local/bin
+- travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+script:
+- stack $ARGS --no-terminal build
+- stack $ARGS --no-terminal test || stack $ARGS exec --no-ghc-package-path --no-terminal $(stack path --dist-dir)/build/test/test
