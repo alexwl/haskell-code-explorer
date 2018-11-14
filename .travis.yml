@@ -4,8 +4,11 @@ sudo: false
 matrix:
   include:
     - env: ARGS=""
+      addons: {apt: {packages: [libgmp-dev]}}
     - env: ARGS="--stack-yaml=stack-8.2.2.yaml"
+      addons: {apt: {packages: [libgmp-dev]}}
     - env: ARGS="--stack-yaml=stack-8.0.2.yaml"
+      addons: {apt: {packages: [libgmp-dev]}}
 
 cache:
   directories:
@@ -21,6 +24,7 @@ before_install:
 - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
 install:
+- travis_retry stack $ARGS --no-terminal install cabal-install
 - travis_retry stack $ARGS --no-terminal exec --no-ghc-package-path cabal -- update
 
 script:
