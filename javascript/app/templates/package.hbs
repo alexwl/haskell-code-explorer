@@ -36,30 +36,40 @@
             </div>
             {{#bottom-panel visible=bottomPanelVisible topPanelElementId="#file-container" containerElementId="#right-panel" as |section|}}
                 {{#if (eq section "header")}}
-                    References to <b><span class="source-code">{{occName}}</span></b> in <span class="source-code">{{packageId}}</span>
-                    {{#if globalReferences}}
-                        <span>
-                            &nbsp; &nbsp; &nbsp;  In other packages:
-                            {{#each globalReferences as |ref|}}
-                                <a href="#" {{action "updateReferences" (concat ref.packageId.name "-" ref.packageId.version) externalId occName}}>{{ref.packageId.name}}</a> : {{ref.count}}
-                            {{/each}}
-                        </span>
-                    {{/if}}                   
+                    References to <b><span class="source-code">{{occName}}</span></b>
+                    {{#if locationInfo.packageId}}
+                        from {{locationInfo.packageId.name}}-{{locationInfo.packageId.version}} / {{locationInfo.moduleName}}
+                    {{/if}}
                 {{else}}
-                    {{#paginated-list url=referencesUrl as |files|}}
-                        <ul>
-                            {{#each files as |file|}}
-                                <li>
-                                    <div class="file-name"><a href="/package/{{packageId}}/show/{{file.name}}">{{file.name}}</a></div>
-                                    {{#each file.references as |reference|}}
-                                        <a class="source-code source-code-snippet" href="/package/{{packageId}}/show/{{file.name}}#L{{reference.idSrcSpan.line}}">{{{reference.sourceCodeHtml}}}</a>
-                                    {{/each}}
-                                </li>
-                            {{/each}}
-                        </ul>
-                    {{/paginated-list}}
+                    <div class="references-packages">
+                        {{#if globalReferences}}
+                            <span>
+                                {{#each globalReferences as |ref|}}
+                                    <div>
+                                        <a class="{{if (eq ref.packageId packageId) 'selected'}}" href="#" {{action "updateReferences" ref.packageId externalId occName locationInfo}}>
+                                            {{ref.packageId}}
+                                        </a> ({{ref.count}})
+                                    </div>
+                                {{/each}}
+                            </span>                        
+                        {{/if}}
+                    </div>
+                    <div class="references">                        
+                        {{#paginated-list url=referencesUrl foundWhere=(concat "in " packageId) as |files|}}
+                            <ul>
+                                {{#each files as |file|}}
+                                    <li>
+                                        <div class="file-name"><a href="/package/{{packageId}}/show/{{file.name}}">{{file.name}}</a></div>
+                                        {{#each file.references as |reference|}}
+                                            <a class="source-code source-code-snippet" href="/package/{{packageId}}/show/{{file.name}}#L{{reference.idSrcSpan.line}}">{{{reference.sourceCodeHtml}}}</a>
+                                        {{/each}}
+                                    </li>
+                                {{/each}}
+                            </ul>
+                        {{/paginated-list}}
+                    </div>
                 {{/if}}
-            {{/bottom-panel}}       
+            {{/bottom-panel}}
         </div>
     </div>
 </div>

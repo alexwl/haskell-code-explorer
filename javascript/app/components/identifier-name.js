@@ -54,7 +54,8 @@ export default Ember.Component.extend({
     findReferences (identifierInfo,currentPackageId) {
       this.get('findReferences')(currentPackageId,
                                  identifierInfo.externalId,
-                                 identifierInfo.demangledOccName);
+                                 identifierInfo.demangledOccName,
+                                 identifierInfo.locationInfo);
     }
   }
 });

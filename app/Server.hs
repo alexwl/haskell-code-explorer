@@ -252,7 +252,7 @@ type GlobalReferenceMap = HM.HashMap HCE.ExternalId (S.Set GlobalReferences)
 
 data GlobalReferences = GlobalReferences
   { count :: Int
-  , packageId :: HCE.PackageId
+  , packageId :: T.Text
   } deriving (Show, Eq, Ord, Generic)
 
 instance A.ToJSON GlobalReferences
@@ -307,14 +307,16 @@ loadPackages config = do
                   in HM.insert key path hMap)
               HM.empty
               loadedPackages
-          globalReferences =
+          globalReferenceMap =
             L.foldl'
               (\hMap (packageInfo, _path) ->
                  let references =
                        HM.map
                          (\spans ->
                             S.singleton
-                              (GlobalReferences (S.size spans) packageId)) .
+                              (GlobalReferences
+                                 (S.size spans)
+                                 (HCE.packageIdToText packageId))) .
                        HCE.externalIdOccMap $
                        packageInfo
                      packageId =
@@ -326,12 +328,12 @@ loadPackages config = do
       packageMapCompacted <- ghcCompact packageMap
       packagePathMapCompacted <- ghcCompact packagePathMap
       packageVersionsCompacted <- ghcCompact packageVersions
-      globalReferencesCompacted <- ghcCompact globalReferences
+      globalReferenceMapCompacted <- ghcCompact globalReferenceMap
       return . Just $
         ( packageMapCompacted
         , packagePathMapCompacted
         , packageVersionsCompacted
-        , globalReferencesCompacted)
+        , globalReferenceMapCompacted)
     else return Nothing
   where
     packageName :: HCE.PackageInfo HCE.CompactModuleInfo -> PackageName
@@ -343,7 +345,7 @@ loadPackages config = do
     packageVersion =
       HCE.version . (HCE.id :: HCE.PackageInfo modInfo -> HCE.PackageId)
 
-ghcCompact :: forall a. a -> IO  a
+ghcCompact :: forall a. a -> IO a
 ghcCompact =
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
   (fmap C.getCompact . C.compact)
@@ -431,7 +433,7 @@ type GetExpressions = "api" :> "expressions"
 
 type GetReferences = "api" :> "references"
   :> Capture "packageId" PackageId
-  :> Capture "name" HCE.ExternalId
+  :> Capture "externalId" HCE.ExternalId
   :> QueryParam "page" Int
   :> QueryParam "per_page" Int
   :> Get '[JSON] (Headers '[Header "Link" T.Text,Header "X-Total-Count" Int]
@@ -446,7 +448,8 @@ type GetIdentifiers = "api" :> "identifiers"
                  [HCE.ExternalIdentifierInfo])
 
 type GetGlobalReferences = "api" :> "globalReferences"
-  :> Capture "name" HCE.ExternalId :> Get '[JSON] [GlobalReferences]
+  :> Capture "externalId" HCE.ExternalId  
+  :> Get '[JSON] [GlobalReferences]
 
 instance AllCTRender '[ JSON] AllPackages where
   handleAcceptH _ _ (AllPackages bytestring) =
@@ -686,9 +689,8 @@ getGlobalReferences ::
      HCE.ExternalId -> ReaderT Environment IO [GlobalReferences]
 getGlobalReferences externalId = do
   refMap <- asks envGlobalReferenceMap
-  return $ maybe [] S.toDescList (HM.lookup externalId refMap)
+  return $ maybe [] S.toDescList (HM.lookup externalId refMap)  
 
--- | Returns references in the current package
 getReferences ::
      PackageId
   -> HCE.ExternalId
@@ -699,14 +701,8 @@ getReferences packageId externalId mbPage mbPerPage =
   withPackageInfo packageId $ \packageInfo ->
     case S.toList <$> HM.lookup externalId (HCE.externalIdOccMap packageInfo) of
       Just references -> do
-        (page, perPage) <- initializePagination mbPage mbPerPage
-        pagination <- mkPagination perPage page
-        let totalCount = L.length references
-        paginatedReferences <-
-          paginate
-            pagination
-            (fromIntegral totalCount)
-            (\offset limit -> return . L.take limit . L.drop offset $ references)
+        (paginatedReferences, page, perPage, totalCount) <-
+          paginateItems mbPage mbPerPage references
         let url =
               T.append "/" $
               toUrlPiece $
@@ -812,14 +808,8 @@ findIdentifiers packageId query mbPage mbPerPage =
             S.toList $
             HCE.match (T.unpack query) (HCE.externalIdInfoMap packageInfo)
           | otherwise = []
-    (page, perPage) <- initializePagination mbPage mbPerPage
-    let totalCount = L.length identifiers
-    pagination <- mkPagination perPage page
-    paginatedIdentifiers <-
-      paginate
-        pagination
-        (fromIntegral totalCount)
-        (\offset limit -> return . L.take limit . L.drop offset $ identifiers)
+    (paginatedIdentifiers, page, perPage, totalCount) <-
+      paginateItems mbPage mbPerPage identifiers
     let url =
           T.append "/" $
           toUrlPiece $
@@ -838,6 +828,22 @@ findIdentifiers packageId query mbPage mbPerPage =
         addHeaders = addHeader linkHeader . addHeader totalCount
     return . addHeaders . paginatedItems $ paginatedIdentifiers
 
+paginateItems ::
+     Maybe Int
+  -> Maybe Int
+  -> [a]
+  -> ReaderT Environment IO (Paginated a, Natural, Natural, Int)
+paginateItems mbPage mbPerPage items = do
+  (page, perPage) <- initializePagination mbPage mbPerPage
+  let totalCount = L.length items
+  pagination <- mkPagination perPage page
+  paginated <-
+    paginate
+      pagination
+      (fromIntegral totalCount)
+      (\offset limit -> return . L.take limit . L.drop offset $ items)
+  return (paginated, page, perPage, totalCount)
+    
 error404 :: BSL.ByteString -> ReaderT Environment IO a
 error404 body = throwServantError $ err404 {errBody = body}
 
