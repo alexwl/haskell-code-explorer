@@ -32,11 +32,19 @@
         {{/resizable-panel}}
         <div id="right-panel" class="right-panel">
             <div id="file-container" class="file-container">                
-                {{outlet}}                
+                {{outlet}}
             </div>
             {{#bottom-panel visible=bottomPanelVisible topPanelElementId="#file-container" containerElementId="#right-panel" as |section|}}
                 {{#if (eq section "header")}}
                     References to <b><span class="source-code">{{occName}}</span></b> in <span class="source-code">{{packageId}}</span>
+                    {{#if globalReferences}}
+                        <span>
+                            &nbsp; &nbsp; &nbsp;  In other packages:
+                            {{#each globalReferences as |ref|}}
+                                <a href="#" {{action "updateReferences" (concat ref.packageId.name "-" ref.packageId.version) externalId occName}}>{{ref.packageId.name}}</a> : {{ref.count}}
+                            {{/each}}
+                        </span>
+                    {{/if}}                   
                 {{else}}
                     {{#paginated-list url=referencesUrl as |files|}}
                         <ul>

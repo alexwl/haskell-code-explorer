@@ -25,5 +25,8 @@ export const urls = {
   },
   identifierSearchUrl : function (packageId,query) {
     return config.APP.apiUrlPrefix + "/identifiers/"+packageId+"/"+encodeURIComponent(query).replace(/\./g, '%2E');
+  },
+  globalReferencesUrl : function (externalId) {
+    return config.APP.apiUrlPrefix + "/globalReferences/"+encodeURIComponent(externalId);
   }
 }

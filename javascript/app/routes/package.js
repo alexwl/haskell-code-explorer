@@ -24,7 +24,12 @@ export default Ember.Route.extend({
         this.set('controller.currentFile',filePath);
       }
     },
-    updateReferences(packageId,externalId,occName) {
+    updateReferences(packageId,externalId,occName) {      
+      this.get('store').loadGlobalReferences(externalId).then((refs) => {
+        Ember.run.next(this,() => {          
+          this.set('controller.globalReferences',refs.filter((r) => r.packageId.name+"-"+r.packageId.version != packageId));
+        });
+      });
       this.set('controller.packageId',packageId);
       this.set('controller.externalId',externalId);
       this.set('controller.occName',occName);
