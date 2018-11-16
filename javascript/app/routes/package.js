@@ -24,10 +24,18 @@ export default Ember.Route.extend({
         this.set('controller.currentFile',filePath);
       }
     },
-    updateReferences(packageId,externalId,occName,locationInfo) {      
+    updateReferences(packageId,externalId,occName,locationInfo,noScrollIntoView) {
       this.get('store').loadGlobalReferences(externalId).then((refs) => {
-        Ember.run.next(this,() => {          
+        Ember.run.next(this,() => {
           this.set('controller.globalReferences',refs);
+          if(!noScrollIntoView) {
+            Ember.run.schedule('afterRender', () => {
+              const element = document.getElementById('references-package-'+packageId);
+              if(element) {
+                element.scrollIntoView();
+              }
+            });
+          }
         });
       });
       this.set('controller.packageId',packageId);

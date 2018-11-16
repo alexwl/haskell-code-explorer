@@ -38,24 +38,24 @@
                 {{#if (eq section "header")}}
                     References to <b><span class="source-code">{{occName}}</span></b>
                     {{#if locationInfo.packageId}}
-                        from {{locationInfo.packageId.name}}-{{locationInfo.packageId.version}} / {{locationInfo.moduleName}}
+                        (defined in <b>{{locationInfo.packageId.name}}-{{locationInfo.packageId.version}}</b> / <b>{{locationInfo.moduleName}}</b>)
                     {{/if}}
                 {{else}}
-                    <div class="references-packages">
+                    <div id="references-packages" class="references-packages">
                         {{#if globalReferences}}
                             <span>
                                 {{#each globalReferences as |ref|}}
                                     <div>
-                                        <a class="{{if (eq ref.packageId packageId) 'selected'}}" href="#" {{action "updateReferences" ref.packageId externalId occName locationInfo}}>
+                                        <a id="references-package-{{ref.packageId}}" class="{{if (eq ref.packageId packageId) 'selected'}}" href="#" {{action "updateReferences" ref.packageId externalId occName locationInfo true}}>
                                             {{ref.packageId}}
                                         </a> ({{ref.count}})
                                     </div>
                                 {{/each}}
-                            </span>                        
+                            </span>
                         {{/if}}
                     </div>
                     <div class="references">                        
-                        {{#paginated-list url=referencesUrl foundWhere=(concat "in " packageId) as |files|}}
+                        {{#paginated-list url=referencesUrl foundWhere=(concat "in <b>" packageId "</b>") as |files|}}
                             <ul>
                                 {{#each files as |file|}}
                                     <li>

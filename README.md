@@ -23,9 +23,10 @@ Reading and understanding code is an essential part of the software development 
 * Types (actual type, instantiated type, instance resolution tree) and documentation on hover. Types are interactive: left-click on a type constructor -> go to definition, right click on a type constructor -> show kind signature.<br />
   ![Hover](https://haskell-code-explorer.mfix.io/hover.png)
 
-* Go to definition
+* Go to definition (cross-package)
 
-* Find references
+* Find references (cross-package)
+  ![References](https://haskell-code-explorer.mfix.io/references.png)
 
 * Type of each expression<br />
   ![Expression](https://haskell-code-explorer.mfix.io/expressions.png)<br />

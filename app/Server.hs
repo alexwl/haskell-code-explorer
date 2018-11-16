@@ -1065,7 +1065,7 @@ main = do
   print config
   packages <- loadPackages config
   case packages of
-    Just (packageMap, packagePathMap, packageVersions,globalReferences) -> do
+    Just (packageMap, packagePathMap, packageVersions,globalReferenceMap) -> do
       loggerSet <-
         case configLog config of
           HCE.ToFile logfile -> newFileLoggerSet defaultBufSize logfile
@@ -1081,7 +1081,7 @@ main = do
               loggerSet
               packageMap
               (AllPackages . A.encode $ packageVersions)
-              globalReferences
+              globalReferenceMap
               config
           static =
             if configServeStaticFiles config
