@@ -115,7 +115,10 @@ function colorThemeToCss(colorTheme) {
    }
    .type-info {
       border-top: 1px solid ${colorTheme.borderColor} !important;
-   }`;
+   }
+   .references-packages  {
+      border-right:1px solid ${colorTheme.borderColor} !important;
+   }`;   
   return css;
 }
 

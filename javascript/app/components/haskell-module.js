@@ -162,10 +162,11 @@ function initializeIdentifiers (sourceCodeContainerElement,component) {
                              event.which,
                              currentLineNumber);
             } else {
-              if(identifierInfo.sort === "External") {
+              if(identifierInfo.sort === "External") {                
                 component.get('findReferences')(component.get('packageId'),
                                                 identifierInfo.externalId,
-                                                identifierInfo.demangledOccName);
+                                                identifierInfo.demangledOccName,
+                                                identifierInfo.locationInfo);
 
               }
             }
@@ -400,7 +401,7 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
 }
 
 export default Ember.Component.extend({
-  store : Ember.inject.service('store'),  
+  store : Ember.inject.service('store'),
   selectedIdentifier : null,
   isHoveredOverIdentifier : false,
   hasSelectedExpression : false,

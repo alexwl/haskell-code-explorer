@@ -52,6 +52,7 @@ export default Ember.Service.extend({
     this.modulePaths = {};
     this.expressions = {};
     this.references = {};
+    this.globalReferences = {};
   },
   loadPackage(packageId) {
     const packageInfo = this.packages[packageId];
@@ -137,5 +138,17 @@ export default Ember.Service.extend({
         linkHeader:linkHeader
       };
     });
-  }
+  },
+  loadGlobalReferences(externalId) {
+    const globalReferences = this.globalReferences[externalId];    
+    if(globalReferences) {
+      return new RSVP.Promise((resolve) => {resolve(globalReferences);});
+    } else {
+      const url = urls.globalReferencesUrl(externalId);      
+      return Ember.$.getJSON(url).then((refs) => {
+        this.globalReferences[externalId] = refs;
+        return refs;
+      });
+    }
+  },
 });

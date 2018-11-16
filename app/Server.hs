@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -247,8 +248,18 @@ newtype PackageName = PackageName
   
 instance A.ToJSON PackageVersions
 
+type GlobalReferenceMap = HM.HashMap HCE.ExternalId (S.Set GlobalReferences)
+
+data GlobalReferences = GlobalReferences
+  { count :: Int
+  , packageId :: T.Text
+  } deriving (Show, Eq, Ord, Generic)
+
+instance A.ToJSON GlobalReferences
+
 loadPackages ::
-     ServerConfig -> IO (Maybe (PackageMap, PackagePathMap, [PackageVersions]))
+     ServerConfig
+  -> IO (Maybe (PackageMap, PackagePathMap, [PackageVersions], GlobalReferenceMap))
 loadPackages config = do
   packageDirectories <-
     case configPackagesPath config of
@@ -296,11 +307,33 @@ loadPackages config = do
                   in HM.insert key path hMap)
               HM.empty
               loadedPackages
+          globalReferenceMap =
+            L.foldl'
+              (\hMap (packageInfo, _path) ->
+                 let references =
+                       HM.map
+                         (\spans ->
+                            S.singleton
+                              (GlobalReferences
+                                 (S.size spans)
+                                 (HCE.packageIdToText packageId))) .
+                       HCE.externalIdOccMap $
+                       packageInfo
+                     packageId =
+                       HCE.id
+                         (packageInfo :: HCE.PackageInfo HCE.CompactModuleInfo)
+                  in HM.unionWith S.union references hMap)
+              HM.empty
+              loadedPackages
       packageMapCompacted <- ghcCompact packageMap
       packagePathMapCompacted <- ghcCompact packagePathMap
       packageVersionsCompacted <- ghcCompact packageVersions
+      globalReferenceMapCompacted <- ghcCompact globalReferenceMap
       return . Just $
-        (packageMapCompacted, packagePathMapCompacted, packageVersionsCompacted)
+        ( packageMapCompacted
+        , packagePathMapCompacted
+        , packageVersionsCompacted
+        , globalReferenceMapCompacted)
     else return Nothing
   where
     packageName :: HCE.PackageInfo HCE.CompactModuleInfo -> PackageName
@@ -312,7 +345,7 @@ loadPackages config = do
     packageVersion =
       HCE.version . (HCE.id :: HCE.PackageInfo modInfo -> HCE.PackageId)
 
-ghcCompact :: forall a. a -> IO  a
+ghcCompact :: forall a. a -> IO a
 ghcCompact =
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
   (fmap C.getCompact . C.compact)
@@ -377,6 +410,7 @@ type API = GetAllPackages
   :<|> GetExpressions
   :<|> GetReferences
   :<|> GetIdentifiers
+  :<|> GetGlobalReferences
 
 type GetAllPackages = "api" :> "packages" :> Get '[JSON] AllPackages
 
@@ -399,7 +433,7 @@ type GetExpressions = "api" :> "expressions"
 
 type GetReferences = "api" :> "references"
   :> Capture "packageId" PackageId
-  :> Capture "name" HCE.ExternalId
+  :> Capture "externalId" HCE.ExternalId
   :> QueryParam "page" Int
   :> QueryParam "per_page" Int
   :> Get '[JSON] (Headers '[Header "Link" T.Text,Header "X-Total-Count" Int]
@@ -412,6 +446,10 @@ type GetIdentifiers = "api" :> "identifiers"
   :> QueryParam "per_page" Int
   :> Get '[JSON] (Headers '[Header "Link" T.Text,Header "X-Total-Count" Int]
                  [HCE.ExternalIdentifierInfo])
+
+type GetGlobalReferences = "api" :> "globalReferences"
+  :> Capture "externalId" HCE.ExternalId  
+  :> Get '[JSON] [GlobalReferences]
 
 instance AllCTRender '[ JSON] AllPackages where
   handleAcceptH _ _ (AllPackages bytestring) =
@@ -459,6 +497,7 @@ data Environment = Environment
   { envLogger :: !LoggerSet
   , envPackageMap :: !PackageMap
   , envPackageVersions :: !AllPackages
+  , envGlobalReferenceMap :: !GlobalReferenceMap
   , envConfig :: !ServerConfig
   }
 
@@ -646,6 +685,12 @@ initializePagination mbPage mbPerPage = do
           Nothing -> maxPerPage
   return (fromIntegral page, fromIntegral perPage)
 
+getGlobalReferences ::
+     HCE.ExternalId -> ReaderT Environment IO [GlobalReferences]
+getGlobalReferences externalId = do
+  refMap <- asks envGlobalReferenceMap
+  return $ maybe [] S.toDescList (HM.lookup externalId refMap)  
+
 getReferences ::
      PackageId
   -> HCE.ExternalId
@@ -656,14 +701,8 @@ getReferences packageId externalId mbPage mbPerPage =
   withPackageInfo packageId $ \packageInfo ->
     case S.toList <$> HM.lookup externalId (HCE.externalIdOccMap packageInfo) of
       Just references -> do
-        (page, perPage) <- initializePagination mbPage mbPerPage
-        pagination <- mkPagination perPage page
-        let totalCount = L.length references
-        paginatedReferences <-
-          paginate
-            pagination
-            (fromIntegral totalCount)
-            (\offset limit -> return . L.take limit . L.drop offset $ references)
+        (paginatedReferences, page, perPage, totalCount) <-
+          paginateItems mbPage mbPerPage references
         let url =
               T.append "/" $
               toUrlPiece $
@@ -753,7 +792,7 @@ buildHtmlCodeSnippet sourceLines lineNumber positions =
            case mbId of
              Just _ -> Html.b (Html.toHtml text)
              Nothing -> Html.toHtml text) $
-      HCE.tokenize line (map (\pos -> (pos, ())) positions)
+      HCE.tokenize line (map (, ()) positions)
 
 findIdentifiers ::
      PackageId
@@ -769,14 +808,8 @@ findIdentifiers packageId query mbPage mbPerPage =
             S.toList $
             HCE.match (T.unpack query) (HCE.externalIdInfoMap packageInfo)
           | otherwise = []
-    (page, perPage) <- initializePagination mbPage mbPerPage
-    let totalCount = L.length identifiers
-    pagination <- mkPagination perPage page
-    paginatedIdentifiers <-
-      paginate
-        pagination
-        (fromIntegral totalCount)
-        (\offset limit -> return . L.take limit . L.drop offset $ identifiers)
+    (paginatedIdentifiers, page, perPage, totalCount) <-
+      paginateItems mbPage mbPerPage identifiers
     let url =
           T.append "/" $
           toUrlPiece $
@@ -795,6 +828,22 @@ findIdentifiers packageId query mbPage mbPerPage =
         addHeaders = addHeader linkHeader . addHeader totalCount
     return . addHeaders . paginatedItems $ paginatedIdentifiers
 
+paginateItems ::
+     Maybe Int
+  -> Maybe Int
+  -> [a]
+  -> ReaderT Environment IO (Paginated a, Natural, Natural, Int)
+paginateItems mbPage mbPerPage items = do
+  (page, perPage) <- initializePagination mbPage mbPerPage
+  let totalCount = L.length items
+  pagination <- mkPagination perPage page
+  paginated <-
+    paginate
+      pagination
+      (fromIntegral totalCount)
+      (\offset limit -> return . L.take limit . L.drop offset $ items)
+  return (paginated, page, perPage, totalCount)
+    
 error404 :: BSL.ByteString -> ReaderT Environment IO a
 error404 body = throwServantError $ err404 {errBody = body}
 
@@ -995,7 +1044,8 @@ server env =
      getDefinitionSite :<|>     
      getExpressions :<|>
      getReferences :<|>
-     findIdentifiers)
+     findIdentifiers :<|>
+     getGlobalReferences)
   where
     toServantHandler :: ReaderT Environment IO a -> Handler a
     toServantHandler ma = Handler . ExceptT . try . runReaderT ma $ env
@@ -1015,7 +1065,7 @@ main = do
   print config
   packages <- loadPackages config
   case packages of
-    Just (packageMap, packagePathMap, packageVersions) -> do
+    Just (packageMap, packagePathMap, packageVersions,globalReferenceMap) -> do
       loggerSet <-
         case configLog config of
           HCE.ToFile logfile -> newFileLoggerSet defaultBufSize logfile
@@ -1031,6 +1081,7 @@ main = do
               loggerSet
               packageMap
               (AllPackages . A.encode $ packageVersions)
+              globalReferenceMap
               config
           static =
             if configServeStaticFiles config

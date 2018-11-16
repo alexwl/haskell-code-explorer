@@ -24,10 +24,24 @@ export default Ember.Route.extend({
         this.set('controller.currentFile',filePath);
       }
     },
-    updateReferences(packageId,externalId,occName) {
+    updateReferences(packageId,externalId,occName,locationInfo,noScrollIntoView) {
+      this.get('store').loadGlobalReferences(externalId).then((refs) => {
+        Ember.run.next(this,() => {
+          this.set('controller.globalReferences',refs);
+          if(!noScrollIntoView) {
+            Ember.run.schedule('afterRender', () => {
+              const element = document.getElementById('references-package-'+packageId);
+              if(element) {
+                element.scrollIntoView();
+              }
+            });
+          }
+        });
+      });
       this.set('controller.packageId',packageId);
       this.set('controller.externalId',externalId);
       this.set('controller.occName',occName);
+      this.set('controller.locationInfo',locationInfo);
       this.set('controller.bottomPanelVisible',true);
       this.set('controller.referencesUrl',urls.referencesUrl(packageId,externalId)+"?per_page=50");
     },

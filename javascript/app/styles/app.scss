@@ -8,6 +8,10 @@ a, a:visited, a:focus, a:active, a:hover{
     outline:0 none;
 }
 
+a.selected {
+    text-decoration:underline;
+}
+
 input:focus{
     outline:none;
 }
@@ -552,4 +556,19 @@ button {
 
 .identifier-menu-item {
     margin-right:10px;
+}
+.references-packages {
+    position:absolute;
+    width:230px;
+    top:0px;
+    bottom:0px;
+    overflow:auto;
+    padding:5px;
+}
+.references {
+    position:absolute;
+    left:230px;
+    top:0px;
+    bottom:0px;
+    right:0px;
 }
