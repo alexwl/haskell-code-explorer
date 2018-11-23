@@ -111,8 +111,11 @@ import System.FilePath
   , splitPath
   , takeExtension
   , takeBaseName
+  , takeDirectory
   , splitDirectories  
   )
+import System.FilePath.Find
+import System.Exit (exitFailure)
 import System.Process (readProcess)
 
 createPackageInfo ::
@@ -129,7 +132,12 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
   distDir <-
     case mbDistDirRelativePath of
       Just path -> return $ packageDirectoryAbsPath </> path
-      Nothing -> findDistDirectory packageDirectoryAbsPath
+      Nothing -> do
+        eitherDistDir <- findDistDirectory packageDirectoryAbsPath
+        case eitherDistDir of
+          Right distDir -> return distDir
+          Left errorMessage ->
+            logErrorN (T.pack errorMessage) >> liftIO exitFailure
   let cabalHelperQueryEnv = mkQueryEnv packageDirectoryAbsPath distDir
   ((packageName, packageVersion), compInfo) <-
     liftIO $
@@ -310,7 +318,7 @@ addReferencesFromModule references modInfo@HCE.ModuleInfo {..} =
                HM.insertWith S.union externalId (S.singleton idSrcSpan) occMap
              Nothing -> occMap)
 
-findDistDirectory :: FilePath -> LoggingT IO FilePath
+findDistDirectory :: FilePath -> LoggingT IO (Either String FilePath)
 findDistDirectory packagePath = do
   let parents =
         reverse . map joinPath . filter (not . null) . L.inits . splitPath $
@@ -319,34 +327,49 @@ findDistDirectory packagePath = do
   hasStackYaml <-
     liftIO $ anyM (\path -> doesFileExist (path </> "stack.yaml")) parents
   mbStackExecutable <- liftIO $ findExecutable "stack"
-  let defaultDistDir = packagePath </> "dist"
   case (hasStackYaml, mbStackExecutable) of
     (True, Just stack) -> do
       let removeEndOfLine str
             | null str = str
             | otherwise = init str
+      logInfoN
+        "Found stack.yaml. Executing \"stack path --dist-dir\" to get dist directory."
       eitherDistDir :: (Either IOException String) <-
         liftIO .
         try . fmap removeEndOfLine . readProcess stack ["path", "--dist-dir"] $
         ""
       case eitherDistDir of
         Right distDir -> do
-          logDebugN $ T.append "Stack dist directory : " $ T.pack distDir
-          return distDir
-        Left exception -> do
-          logDebugN $
-            T.append
-              "Error while executing \"stack path --dist-dir\" : "
-              (T.pack . show $ exception)
-          return defaultDistDir
-    (False, _) -> do
-      logDebugN
-        "stack.yaml is not found in the package directory. Using default dist directory."
-      return defaultDistDir
-    (_, Nothing) -> do
-      logDebugN "stack executable is not found. Using default dist directory."
-      return defaultDistDir
-      
+          logInfoN $ T.append "Stack dist directory : " $ T.pack distDir
+          hasSetupConfig <- liftIO $ doesFileExist $ distDir </> "setup-config"
+          if hasSetupConfig
+            then return $ Right distDir
+            else return $
+                 Left
+                   "Cannot find setup-config file in a dist directory. Has the package been built?"
+        Left exception ->
+          return $
+          Left $
+          "Error while executing \"stack path --dist-dir\" : " ++ show exception
+    _ -> do
+      logInfoN "Trying to find dist directory"
+      setupConfigPaths <-
+        liftIO $
+        map (takeDirectory . normalise) <$>
+        find always (fileName ==? "setup-config") "."
+      case setupConfigPaths of
+        [] ->
+          return $
+          Left "Cannot find dist directory. Has the package been built?"
+        [path] -> do
+          logInfoN $ T.append "Found dist directory : " $ T.pack path
+          return $ Right path
+        _ ->
+          return $
+          Left $
+          "Found multiple possible dist directories : \n" ++
+          show setupConfigPaths ++ " \nPlease specify --dist option"
+          
 eachIdentifierOccurrence ::
      forall a.
      a
