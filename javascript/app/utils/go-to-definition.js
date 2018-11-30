@@ -41,7 +41,8 @@ function goToDefinition(store,locationInfo,buttonId,currentLineNumber) {
       saveCurrentLocation(currentLineNumber);
     }
     openUrl(buttonId,url);
-  } else if(locationInfo.tag === "ApproximateLocation") {    
+  } else if((locationInfo.tag === "ApproximateLocation") &&
+            (locationInfo.moduleName.indexOf("Paths_") !== 0)) {
     const packageId = locationInfo.packageId.name+"-"+locationInfo.packageId.version;    
     if(locationInfo.entity === "Mod") {
       store.loadDefinitionSite(packageId,
