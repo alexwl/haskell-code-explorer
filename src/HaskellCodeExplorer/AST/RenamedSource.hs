@@ -64,6 +64,7 @@ import GHC
 #endif
   , Type
   , RoleAnnotDecl(..)
+  , InjectivityAnn (..)
   , unLoc
   )
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
@@ -124,7 +125,8 @@ namesFromRenamedSource =
      hsRecAmbFieldExprNames `extQ`
      hsRecFieldPatNames `extQ`
      foreignDeclNames `extQ`
-     roleAnnotationNames)
+     roleAnnotationNames `extQ`
+     injectivityAnnotationNames)
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 fieldOccName :: Bool -> FieldOcc GhcRn -> NameOccurrence
@@ -647,3 +649,19 @@ roleAnnotationNames (RoleAnnotDecl n _) =
       , isBinder = False
       }
   ]
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+injectivityAnnotationNames :: InjectivityAnn GhcRn -> [NameOccurrence]
+#else
+injectivityAnnotationNames :: InjectivityAnn Name -> [NameOccurrence]
+#endif
+injectivityAnnotationNames (InjectivityAnn lhsName rhsNames) =
+  injAnnNameOcc lhsName : map injAnnNameOcc rhsNames
+  where
+    injAnnNameOcc :: GenLocated SrcSpan Name -> NameOccurrence
+    injAnnNameOcc n =
+      NameOccurrence
+        { locatedName = Just <$> n
+        , description = "InjectivityAnn"
+        , isBinder = False
+        }
