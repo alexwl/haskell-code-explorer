@@ -374,15 +374,9 @@ loadPackageInfo config path =
         ( updateEachModuleInfo
             packageInfo
             (\modInfo ->
-               let source =
-                     HCE.source :: HCE.CompactModuleInfo -> V.Vector T.Text
-                in if not enableExpressionInfo
-                     then modInfo
-                            { HCE.exprInfoMap = IVM.empty
-                            , HCE.source = V.force $ source modInfo
-                            -- 'force' fixes this error: Data.Vector.Mutable: uninitialised element CallStack (from HasCallStack): error, called at ./Data/Vector/Mutable.hs:188:17 in vector-0.12.0.1-GGZqQZyzchy8YFPCF67wxL:Data.Vector.Mutable
-                            }
-                     else modInfo {HCE.source = V.force $ source modInfo})
+               if not enableExpressionInfo
+                 then modInfo {HCE.exprInfoMap = IVM.empty}
+                 else modInfo)
         , path)
       Left e -> return . Left $ (e, path)
 

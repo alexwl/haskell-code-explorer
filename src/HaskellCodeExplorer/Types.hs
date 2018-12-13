@@ -549,7 +549,7 @@ instance Serialize IdentifierOccurrenceSort
 instance Serialize TypeComponent
 instance (Serialize a) => Serialize (V.Vector a) where
   put = put . V.toList
-  get = V.fromList <$> get
+  get = (\l -> V.fromListN (L.length l) l) <$> get
 instance Serialize Type
 instance Serialize ExpressionInfo
 instance Serialize LocatableEntity
