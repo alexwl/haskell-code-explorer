@@ -25,7 +25,6 @@ import qualified Data.IntMap.Strict as IM
 import qualified Data.IntervalMap.Strict as IVM
 import qualified Data.List as L hiding (span)
 import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Ord (comparing)
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 import HsExtension (GhcRn)
 #endif
@@ -241,7 +240,7 @@ createModuleInfo (fileMap, defSiteMap, moduleNameMap) (flags, typecheckedModule,
                    (HM.fromList .
                     (( HCE.HaskellFilePath $ HCE.getHaskellModulePath modulePath
                      , modulePath) :) .
-                    map (\includedFile -> (includedFile, modulePath)) $
+                    map (, modulePath) $
                     includedFiles)
                    fileMap
                , HM.union (HM.singleton modulePath defSites) defSiteMap
@@ -279,9 +278,11 @@ prepareSourceCode ::
   -> (HCE.SourceCodeTransformation, T.Text)
 prepareSourceCode sourceCodePreprocessing originalSourceCode modSum modulePath =
   let sourceCodeAfterPreprocessing =
-        case TE.decodeUtf8'
-               (fromMaybe (error "ms_hspp_buf is Nothing") $
-                stringBufferToByteString <$> ms_hspp_buf modSum) of
+        case TE.decodeUtf8' $
+             maybe
+               (error "ms_hspp_buf is Nothing")
+               stringBufferToByteString
+               (ms_hspp_buf modSum) of
           Right text -> T.replace "\t" "        " text
           Left err ->
             error $
@@ -322,12 +323,12 @@ createDefinitionSiteMap flags currentPackageId compId defSiteMap fileMap globalR
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
       allDecls :: [GenLocated SrcSpan (HsDecl GhcRn)]
 #endif
-      allDecls = L.sortBy (comparing getLoc) . ungroup $ hsGroup
+      allDecls = L.sortOn getLoc . ungroup $ hsGroup
       (instanceDeclsWithDocs, valueAndTypeDeclsWithDocs) =
         L.partition
           (\(L _ decl, _) ->
              case decl of
-               InstD _ -> True
+               InstD {} -> True
                _ -> False) $
         collectDocs allDecls
       --------------------------------------------------------------------------------
@@ -340,7 +341,11 @@ createDefinitionSiteMap flags currentPackageId compId defSiteMap fileMap globalR
         mapMaybe
           (\(L _n decl, docs) ->
              case decl of
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)               
+               InstD _ (ClsInstD _ inst) -> Just (clsInstDeclSrcSpan inst, docs)
+#else  
                InstD (ClsInstD inst) -> Just (clsInstDeclSrcSpan inst, docs)
+#endif  
                _ -> Nothing) $
         instanceDeclsWithDocs
       nameLocation :: Maybe SrcSpan -> Name -> HCE.LocationInfo
@@ -563,7 +568,7 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
               (lineNumber loc)
       fords = map foreignFunToDeclaration $ hs_fords hsGroup
       --------------------------------------------------------------------------------
-   in L.sortBy (comparing HCE.lineNumber) $ vals ++ tyclds ++ insts ++ fords
+   in L.sortOn HCE.lineNumber $ vals ++ tyclds ++ insts ++ fords
 
 foldAST :: Environment -> TypecheckedModule -> SourceInfo
 foldAST environment typecheckedModule =
@@ -616,7 +621,11 @@ foldAST environment typecheckedModule =
               (\(L span ie) ->
 #endif
                  case ie of
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
+                   IEModuleContents _ (L _ modName) ->
+#else
                    IEModuleContents (L _ modName) ->
+#endif
                      Just
                        ( modName
                        , span
@@ -632,7 +641,7 @@ foldAST environment typecheckedModule =
       addImportedAndExportedModulesToIdOccMap ::
            HCE.IdentifierOccurrenceMap -> HCE.IdentifierOccurrenceMap
       addImportedAndExportedModulesToIdOccMap =
-        IM.map (L.sortBy $ comparing fst) .
+        IM.map (L.sortOn fst) .
         addModules
           (envTransformation environment)
           (importedModules ++ exportedModules)

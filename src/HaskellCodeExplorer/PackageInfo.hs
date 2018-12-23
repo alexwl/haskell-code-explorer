@@ -443,7 +443,7 @@ indexBuildComponent sourceCodePreprocessing currentPackageId componentId deps@(f
       (flags', _, _) <-
         parseDynamicFlagsCmdLine
           flags
-          (L.map noLoc . L.filter ((/=) "-Werror") $ options) -- -Werror flag makes warnings fatal 
+          (L.map noLoc . L.filter ("-Werror" /=) $ options) -- -Werror flag makes warnings fatal 
       (flags'', _) <- liftIO $ initPackages flags'
       logFn <- askLoggerIO
       let logAction ::
