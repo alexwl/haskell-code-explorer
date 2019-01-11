@@ -86,7 +86,7 @@ A package should be built using either cabal-install or stack before indexing (`
 If there is no globally installed GHC on the system, then it is possible to use `stack exec` command ([https://docs.haskellstack.org/en/stable/GUIDE/#exec](https://docs.haskellstack.org/en/stable/GUIDE/#exec)) that adds a path to GHC binaries installed by Stack to `PATH` environment variable:
 
 ```bash
-stack --resolver=lts-12.12 exec --no-ghc-package-path haskell-code-indexer -- INDEXER_OPTIONS
+stack --resolver=lts-13.0 exec --no-ghc-package-path haskell-code-indexer -- INDEXER_OPTIONS
 ```
 
 ### Examples
