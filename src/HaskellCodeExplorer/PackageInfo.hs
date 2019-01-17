@@ -438,12 +438,14 @@ indexBuildComponent sourceCodePreprocessing currentPackageId componentId deps@(f
     runGhcT (Just libdir) $ do
       logDebugN (T.append "Component id : " $ HCE.getComponentId componentId)
       logDebugN (T.append "Modules : " $ T.pack $ show modules)
-      logDebugN (T.append "GHC options : " $ T.pack $ show options)
+      logDebugN
+        (T.append "GHC command line options : " $
+         T.pack $ L.intercalate " " (options ++ modules))
       flags <- getSessionDynFlags
       (flags', _, _) <-
         parseDynamicFlagsCmdLine
           flags
-          (L.map noLoc . L.filter ("-Werror" /=) $ options) -- -Werror flag makes warnings fatal 
+          (L.map noLoc . L.filter ("-Werror" /=) $ options) -- -Werror flag makes warnings fatal
       (flags'', _) <- liftIO $ initPackages flags'
       logFn <- askLoggerIO
       let logAction ::
