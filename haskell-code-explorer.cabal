@@ -76,7 +76,7 @@ executable haskell-code-server
   main-is:             Server.hs
   ghc-options:        -Wall -O2 -rtsopts -funbox-strict-fields -threaded
   hs-source-dirs: app,src
-  other-modules: HaskellCodeExplorer.Types  
+  other-modules: HaskellCodeExplorer.Types, Store
   build-depends:     IntervalMap
                    , aeson
                    , base
@@ -110,6 +110,7 @@ executable haskell-code-server
                    , data-default
                    , pagination
                    , file-embed
+                   , mmap
   if impl(ghc >= 8.4.3)
     build-depends: ghc-compact
                                      
