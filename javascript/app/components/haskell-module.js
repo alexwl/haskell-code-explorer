@@ -1,6 +1,7 @@
 import Ember from 'ember';
 import {goToDefinition} from '../utils/go-to-definition';
 import {initializeLineSelection} from '../utils/line-selection';
+import {addLinksToLanguageExtensionsDocs} from '../utils/language-extensions';
 
 function compareLocations (p1,p2) {
   if(p1.line === p2.line) {
@@ -472,8 +473,24 @@ export default Ember.Component.extend({
   didInsertElement() {    
     this._super(...arguments);
     const sourceCodeContainerElement = this.element.querySelector('.source-code-container');
-    sourceCodeContainerElement.innerHTML = this.get('html');
+    sourceCodeContainerElement.innerHTML = this.get('html');    
     this.sourceCodeContainerElement = sourceCodeContainerElement;
+
+    // Add links to Haskell language extensions docs
+    const lines = this.sourceCodeContainerElement.querySelectorAll("tr > td:nth-child(2)");
+    const lineCount = lines.length;
+    let i = 0;
+    while(i < lineCount) {
+      let line = lines.item(i);
+      // A file-header pragma must precede the module keyword in the file.
+      if(line.innerText.indexOf("module ") === 0) {        
+        break;
+      } else {        
+        line.innerHTML = addLinksToLanguageExtensionsDocs(line.innerText);
+        i = i + 1;
+      }
+    }
+    
     this.element.parentNode.scrollTop = 0;
     const declarations = this.element.querySelector('.declarations-content');
     this.set('query','');
