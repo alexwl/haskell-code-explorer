@@ -1,6 +1,26 @@
 <div class="flex-container container">
-    <div>        
-        <!-- <p class="lead"><b>Haskell code explorer</b>  </p> -->
+    <div>
+        <div class="global-identifier-search-form">
+            {{#input-with-autocomplete
+               onSubmit=(action 'searchIdentifier')
+               createSearchUrlFunction=createSearchUrlFunction
+               maxItems=10
+               selectItem=(action 'showIdentifier')
+               searchButtonText="Search in all packages"
+               placeholder="Haskell identifier" as |identifier|}}
+                <span class="source-code-font">{{identifier.demangledOccName}} :: {{type-signature-text components=identifier.idType.components}}</span>
+                <div class="module-name">
+                    <b>{{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}}</b>
+                    {{#if identifier.locationInfo.modulePath}}
+                        {{identifier.locationInfo.modulePath}}
+                    {{else}}
+                        {{identifier.locationInfo.moduleName}}
+                    {{/if}}
+                </div>
+            {{/input-with-autocomplete}}
+        </div>
+    </div>
+    <div>
         <div class="package-search-form">
             {{input class="form-control" type="text" value=query placeholder="Package name"}}
             <span>Number of packages : {{packages.length}}</span>

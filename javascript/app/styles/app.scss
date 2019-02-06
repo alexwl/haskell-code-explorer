@@ -135,6 +135,11 @@ li {
     margin-top:20px;
 }
 
+.global-identifier-search-form {
+    max-width:500px;
+    margin-top:20px;
+}
+
 .package-header-filename {    
     white-space: nowrap;
 }
@@ -530,6 +535,14 @@ button {
     right:0px;
 }
 
+.global-search-results-content {
+    position:absolute;
+    top:80px;
+    bottom:0px;
+    left:0px;
+    right:0px;
+}
+
 .search-result {
     padding:5px;
 }
@@ -557,6 +570,7 @@ button {
 .identifier-menu-item {
     margin-right:10px;
 }
+
 .references-packages {
     position:absolute;
     width:230px;

@@ -14,6 +14,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main where
@@ -283,8 +284,8 @@ newtype PackageName = PackageName
 instance Serialize.Serialize PackageName
 instance A.ToJSON PackageVersions
 
-type GlobalReferenceMap = HM.HashMap HCE.ExternalId (S.Set GlobalReferences) 
-
+type GlobalReferenceMap = HM.HashMap HCE.ExternalId (S.Set GlobalReferences)
+type GlobalIdentifierMap = HCE.Trie Char HCE.ExternalIdentifierInfo
 
 data GlobalReferences = GlobalReferences
   { count :: Int
@@ -444,6 +445,16 @@ instance Store.StoreItem GlobalReferenceMap where
   type KeyArgs GlobalReferenceMap = Proxy GlobalReferenceMap
   itemKey _ = "globalReferenceMap"
 
+newtype GlobalIdentifierMapWrapper = GlobalIdentifierMapWrapper
+  { getGlobalIdentifierMap :: GlobalIdentifierMap
+  }
+
+instance Store.StoreItem GlobalIdentifierMapWrapper where
+  toByteString (GlobalIdentifierMapWrapper idMap) = Serialize.encode idMap
+  fromByteString bs = GlobalIdentifierMapWrapper <$> Serialize.decode bs
+  type KeyArgs GlobalIdentifierMapWrapper = Proxy GlobalIdentifierMapWrapper
+  itemKey _ = "globalIdentifierMap"  
+
 instance Store.StoreItem [PackageVersions] where
   toByteString = Serialize.encode
   fromByteString = Serialize.decode
@@ -482,9 +493,9 @@ createStore :: FilePath -> ServerConfig -> IO ()
 createStore storePath config = do
   packageDirectories <- findDirectories (configPackagesPath config)
   Store.createStore storePath $ \fileHandle -> do
-    (errors, packageMap', packagePathMap', packageVersions', globalReferenceMap', index'') <-
+    (errors, packageMap', packagePathMap', packageVersions', globalReferenceMap', globalIdentifiers', index'') <-
       foldM
-        (\(errors, packageMap, packagePathMap, packageVersions, globalReferenceMap, index) path -> do
+        (\(errors, packageMap, packagePathMap, packageVersions, globalReferenceMap, globalIdentifiers, index) path -> do
            eitherPackageInfo <- loadPackageInfo config path
            case eitherPackageInfo of
              Right (packageInfo, packagePath) -> do
@@ -553,6 +564,10 @@ createStore storePath config = do
                            HCE.externalIdOccMap $
                            packageInfo
                       in HM.unionWith S.union references globalReferenceMap
+                   , globalIdentifiers ++
+                     filter
+                       isExportedId
+                       (trieValues $ HCE.externalIdInfoMap packageInfo)
                    , index')
              Left (errorMessage, path') ->
                return $
@@ -562,8 +577,9 @@ createStore storePath config = do
                  , packagePathMap
                  , packageVersions
                  , globalReferenceMap
+                 , globalIdentifiers
                  , index))
-        ([], HM.empty, HM.empty, [], HM.empty, M.empty)
+        ([], HM.empty, HM.empty, [], HM.empty, [], M.empty)
         packageDirectories
     let versions =
           L.sortOn (T.toLower . (name :: PackageVersions -> T.Text)) .
@@ -575,6 +591,15 @@ createStore storePath config = do
         Store.add packagePathMap' (Proxy :: Proxy PackagePathMap)
         Store.add versions (Proxy :: Proxy [PackageVersions])
         Store.add globalReferenceMap' (Proxy :: Proxy GlobalReferenceMap)
+        let globalIdentifierMap =
+              L.foldl'
+                (\trie exportedId@(HCE.ExternalIdentifierInfo HCE.IdentifierInfo {HCE.demangledOccName = name}) ->
+                   HCE.insertToTrie S.insert (T.unpack name) exportedId trie)
+                HCE.emptyTrie
+                globalIdentifiers'
+        Store.add
+          (GlobalIdentifierMapWrapper globalIdentifierMap)
+          (Proxy :: Proxy GlobalIdentifierMapWrapper)
         Store.add
           packageMap'
           (Proxy :: Proxy (HM.HashMap PackageName (M.Map Version HCE.PackageId)))
@@ -682,25 +707,30 @@ loadPackages ::
   -> IO (Maybe ( PackageMap
                , PackagePathMap
                , [PackageVersions]
-               , GlobalReferenceMap))
+               , GlobalReferenceMap
+               , GlobalIdentifierMap))
 loadPackages _config mbStore
   | (Just store) <- mbStore = do
     let eitherPackagePathMap =
           Store.lookup (Proxy :: Proxy PackagePathMap) store
         eitherGlobalReferenceMap =
           Store.lookup (Proxy :: Proxy GlobalReferenceMap) store
+        eitherGlobalIdentifierMap =
+          getGlobalIdentifierMap <$>
+          Store.lookup (Proxy :: Proxy GlobalIdentifierMapWrapper) store
         eitherPackageVersions =
           Store.lookup (Proxy :: Proxy [PackageVersions]) store
         eitherPackageMap =
           Store.lookup
             (Proxy :: Proxy (HM.HashMap PackageName (M.Map Version HCE.PackageId)))
             store
-    case (,,,) <$> (PackageMapStore store <$> eitherPackageMap) <*>
+    case (,,,,) <$> (PackageMapStore store <$> eitherPackageMap) <*>
          eitherPackagePathMap <*>
          eitherPackageVersions <*>
-         eitherGlobalReferenceMap of
+         eitherGlobalReferenceMap <*>
+         eitherGlobalIdentifierMap of
       Right res -> return $ Just res
-      Left _ -> do
+      Left e -> do        
         putStrLn "Store lookup errors : "
         let ignoreRight :: Either a b -> Either a ()
             ignoreRight = second (const ())
@@ -709,7 +739,7 @@ loadPackages _config mbStore
             [ ignoreRight eitherGlobalReferenceMap
             , ignoreRight eitherPackageMap
             , ignoreRight eitherPackageVersions
-            , ignoreRight eitherGlobalReferenceMap
+            , ignoreRight eitherGlobalIdentifierMap
             ]
         return Nothing 
 loadPackages config _ = do
@@ -774,15 +804,36 @@ loadPackages config _ = do
                   in HM.unionWith S.union references hMap)
               HM.empty
               loadedPackages
+          globalIdentifierMap =
+            L.foldl'
+              (\trie (packageInfo, _path) ->
+                 let exportedIds :: [HCE.ExternalIdentifierInfo]
+                     exportedIds =
+                       filter isExportedId $
+                       trieValues $ HCE.externalIdInfoMap packageInfo
+                  in L.foldl
+                       (\trie' exportedId@(HCE.ExternalIdentifierInfo (HCE.IdentifierInfo {HCE.demangledOccName = name})) ->
+                          HCE.insertToTrie
+                            S.insert
+                            (T.unpack name)
+                            exportedId
+                            trie')
+                       trie
+                       exportedIds)
+              HCE.emptyTrie
+              loadedPackages
       packageMapCompacted <- ghcCompact packageMap
       packagePathMapCompacted <- ghcCompact packagePathMap
       packageVersionsCompacted <- ghcCompact packageVersions
       globalReferenceMapCompacted <- ghcCompact globalReferenceMap
+      globalIdentifierMapCompacted <- ghcCompact globalIdentifierMap
       return . Just $
         ( packageMapCompacted
         , packagePathMapCompacted
         , packageVersionsCompacted
-        , globalReferenceMapCompacted)
+        , globalReferenceMapCompacted
+        , globalIdentifierMapCompacted  
+        )
     else return Nothing
   where
     packageName :: HCE.PackageInfo HCE.CompactModuleInfo -> PackageName
@@ -793,6 +844,14 @@ loadPackages config _ = do
     packageVersion :: HCE.PackageInfo HCE.CompactModuleInfo -> Version
     packageVersion =
       HCE.version . (HCE.id :: HCE.PackageInfo modInfo -> HCE.PackageId)
+
+trieValues :: HCE.Trie k v -> [v]
+trieValues (HCE.Trie values children) =
+  S.toList values ++ concatMap trieValues (HM.elems children)
+
+isExportedId :: HCE.ExternalIdentifierInfo -> Bool
+isExportedId (HCE.ExternalIdentifierInfo HCE.IdentifierInfo {isExported}) =
+  isExported
 
 ghcCompact :: forall a. a -> IO a
 ghcCompact =
@@ -854,6 +913,7 @@ type API = GetAllPackages
   :<|> GetReferences
   :<|> GetIdentifiers
   :<|> GetGlobalReferences
+  :<|> GetGlobalIdentifiers
 
 type GetAllPackages = "api" :> "packages" :> Get '[JSON] AllPackages
 
@@ -893,6 +953,13 @@ type GetIdentifiers = "api" :> "identifiers"
 type GetGlobalReferences = "api" :> "globalReferences"
   :> Capture "externalId" HCE.ExternalId  
   :> Get '[JSON] [GlobalReferences]
+
+type GetGlobalIdentifiers = "api" :> "globalIdentifiers"
+  :> Capture "query" T.Text
+  :> QueryParam "page" Int
+  :> QueryParam "per_page" Int
+  :> Get '[JSON] (Headers '[Header "Link" T.Text,Header "X-Total-Count" Int]
+                 [HCE.ExternalIdentifierInfo])  
 
 instance AllCTRender '[ JSON] AllPackages where
   handleAcceptH _ _ (AllPackages bytestring) =
@@ -941,6 +1008,7 @@ data Environment = Environment
   , envPackageMap :: !PackageMap
   , envPackageVersions :: !AllPackages
   , envGlobalReferenceMap :: !GlobalReferenceMap
+  , envGlobalIdentifierMap :: !GlobalIdentifierMap
   , envConfig :: !ServerConfig
   }
 
@@ -1360,7 +1428,39 @@ findIdentifiers packageId query mbPage mbPerPage =
                             respond $
                             S.toList $
                             HCE.match (T.unpack $ T.drop 4 query) trie
-                          Left _ -> respond []
+                          Left _ -> respond []                          
+
+findGlobalIdentifiers ::
+     T.Text
+  -> Maybe Int
+  -> Maybe Int
+  -> ReaderT Environment IO (Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] [HCE.ExternalIdentifierInfo])
+findGlobalIdentifiers query mbPage mbPerPage = do
+  globalIdentifierMap <- asks envGlobalIdentifierMap
+  let maxItems = 500
+  let identifiers
+        | T.length query > 0 =
+          L.take maxItems $
+          S.toList $ HCE.match (T.unpack query) globalIdentifierMap
+        | otherwise = []
+  (paginatedIdentifiers, page, perPage, totalCount) <-
+    paginateItems mbPage mbPerPage identifiers
+  let url =
+        T.append "/" $
+        toUrlPiece $
+        safeLink
+          (Proxy :: Proxy API)
+          (Proxy :: Proxy GetGlobalIdentifiers)
+          query
+          Nothing
+          Nothing
+      linkHeader = buildLinkHeader url paginatedIdentifiers page perPage
+      addHeaders ::
+           forall a.
+           a
+        -> Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] a
+      addHeaders = addHeader linkHeader . addHeader totalCount
+  return . addHeaders . paginatedItems $ paginatedIdentifiers
 
 paginateItems ::
      Maybe Int
@@ -1624,7 +1724,8 @@ server env =
      getExpressions :<|>
      getReferences :<|>
      findIdentifiers :<|>
-     getGlobalReferences)
+     getGlobalReferences :<|>
+     findGlobalIdentifiers)
   where
     toServantHandler :: ReaderT Environment IO a -> Handler a
     toServantHandler ma = Handler . ExceptT . try . runReaderT ma $ env
@@ -1658,7 +1759,7 @@ main = do
           Nothing -> return Nothing
   packages <- loadPackages config mbStore
   case packages of
-    Just (packageMap, packagePathMap, packageVersions, globalReferenceMap) -> do
+    Just (packageMap, packagePathMap, packageVersions, globalReferenceMap, globalIdentifierMap) -> do
       loggerSet <-
         case configLog config of
           HCE.ToFile logfile -> newFileLoggerSet defaultBufSize logfile
@@ -1666,7 +1767,7 @@ main = do
       loggerMiddleware <-
         liftIO $
         mkRequestLogger
-          def {outputFormat = Detailed True, destination = Logger loggerSet}
+          def {outputFormat = Detailed True, destination = Logger loggerSet}      
       let staticFilePrefix = configStaticFilesUrlPrefix config
           mbJsDistPath = configJsDistDirectory config
           environment =
@@ -1675,6 +1776,7 @@ main = do
               packageMap
               (AllPackages . A.encode $ packageVersions)
               globalReferenceMap
+              globalIdentifierMap
               config
           static =
             if configServeStaticFiles config

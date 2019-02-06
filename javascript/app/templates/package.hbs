@@ -7,6 +7,7 @@
                createSearchUrlFunction=createSearchUrlFunction
                maxItems=10
                selectItem=(action 'showIdentifier')
+               searchButtonText="Search"
                placeholder="Identifier" as |identifier|}}
                 <span class="source-code-font">{{identifier.demangledOccName}} :: {{type-signature-text components=identifier.idType.components}}</span>
                 <div class="module-name">
@@ -31,7 +32,7 @@
             </div>
         {{/resizable-panel}}
         <div id="right-panel" class="right-panel">
-            <div id="file-container" class="file-container">                
+            <div id="file-container" class="file-container">
                 {{outlet}}
             </div>
             {{#bottom-panel visible=bottomPanelVisible topPanelElementId="#file-container" containerElementId="#right-panel" as |section|}}

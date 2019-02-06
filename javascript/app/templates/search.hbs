@@ -1,0 +1,46 @@
+<div class="flex-container container">
+    <div style="position:relative;height:100%">
+        <div class="absolute-container">     
+            <div class="global-identifier-search-form">
+                {{#input-with-autocomplete
+                   onSubmit=(action 'searchIdentifier')
+                   createSearchUrlFunction=createSearchUrlFunction
+                   maxItems=10
+                   selectItem=(action 'showIdentifier')
+                   searchButtonText="Search in all packages"
+                   placeholder="Haskell identifier" as |identifier|}}
+                    <span class="source-code-font">{{identifier.demangledOccName}} :: {{type-signature-text components=identifier.idType.components}}</span>
+                    <div class="module-name">
+                        <b>{{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}}</b>
+                        {{#if identifier.locationInfo.modulePath}}
+                            {{identifier.locationInfo.modulePath}}
+                        {{else}}
+                            {{identifier.locationInfo.moduleName}}
+                        {{/if}}
+                    </div>
+                {{/input-with-autocomplete}}
+            </div>
+            <div>
+                Query : {{model.query}}
+            </div>
+            <div class="global-search-results-content">
+                {{#paginated-list url=model.url as |identifiers|}}
+                    <ul>
+                        {{#each identifiers as |identifier|}}
+                            <li class="search-result">
+                                <span class="source-code" ><b>{{identifier.demangledOccName}}</b> :: {{type-signature-text components=identifier.idType.components}}</span>
+                                <div><a href="#" onmouseup={{action "goToDefinition" identifier.locationInfo}}>Go to definition</a></div>
+                                <div class="identifier-module">
+                                    {{#if identifier.locationInfo.modulePath}}
+                                        Defined in <b> {{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}} </b> <a href="/package/{{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}}/show/{{identifier.locationInfo.modulePath}}">{{identifier.locationInfo.modulePath}}</a>
+                                    {{/if}}
+                                </div>
+                                <div>{{{identifier.doc}}}</div>
+                            </li>
+                        {{/each}}
+                    </ul>
+                {{/paginated-list}}
+            </div>
+        </div>
+    </div>
+</div>

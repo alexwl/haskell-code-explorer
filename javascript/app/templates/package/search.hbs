@@ -2,11 +2,11 @@
     Query : {{model.query}}
 </div>
 <div class="search-results-content">
-    {{#paginated-list url=model.url as |identifiers|}}    
+    {{#paginated-list url=model.url as |identifiers|}}
         <ul>
             {{#each identifiers as |identifier|}}
-                <li class="search-result">                    
-                    <span class="source-code" >{{identifier.demangledOccName}} :: {{type-signature-text components=identifier.idType.components}}</span>
+                <li class="search-result">
+                    <span class="source-code" ><b>{{identifier.demangledOccName}}</b> :: {{type-signature-text components=identifier.idType.components}}</span>
                     <div><a href="#" onmouseup={{action "goToDefinition" identifier.locationInfo}}>Go to definition</a></div>
                     <div class="identifier-module">
                         {{#if identifier.locationInfo.modulePath}}

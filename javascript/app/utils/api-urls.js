@@ -28,5 +28,8 @@ export const urls = {
   },
   globalReferencesUrl : function (externalId) {
     return config.APP.apiUrlPrefix + "/globalReferences/"+encodeURIComponent(externalId);
+  },
+  globalIdentifiersUrl : function (query) {
+    return config.APP.apiUrlPrefix + "/globalIdentifiers/"+encodeURIComponent(query).replace(/\./g, '%2E');
   }
 }

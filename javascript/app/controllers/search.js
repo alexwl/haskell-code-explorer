@@ -1,17 +1,16 @@
 import Ember from 'ember';
 import {goToDefinition} from '../utils/go-to-definition';
 
-export default Ember.Controller.extend({  
-  queryObserver : Ember.observer("query",function() {    
-    Ember.run.debounce(this, () => {
-      const regExp = new RegExp(this.get('query'),"i");
-      const packages = this.get('model').filter((p) => p.name.search(regExp) != -1);      
-      Ember.run.next(() => {
-        this.set('packages',packages);
-      });
-    }, 300);
-  }),
-  actions: {
+export default Ember.Controller.extend({
+  store : Ember.inject.service('store'),
+  actions : {
+    goToDefinition (locationInfo,event) {      
+      goToDefinition(this.get('store'),
+                     locationInfo,
+                     event.which,
+                     null);
+      return false;
+    },
     searchIdentifier (query) {
       if(query) {
         document.title = "Haskell code explorer";
