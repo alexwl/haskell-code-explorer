@@ -506,7 +506,7 @@ function addLinksToLanguageExtensionsDocs(string) {
       return match;
     }
   });
-};
+}
 
 export {
   addLinksToLanguageExtensionsDocs

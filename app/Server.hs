@@ -730,7 +730,7 @@ loadPackages _config mbStore
          eitherGlobalReferenceMap <*>
          eitherGlobalIdentifierMap of
       Right res -> return $ Just res
-      Left e -> do        
+      Left _ -> do        
         putStrLn "Store lookup errors : "
         let ignoreRight :: Either a b -> Either a ()
             ignoreRight = second (const ())
@@ -908,7 +908,7 @@ handleSync onError =
 --------------------------------------------------------------------------------
 
 type API = GetAllPackages
-  :<|> GetDefinitionSite  
+  :<|> GetDefinitionSite
   :<|> GetExpressions
   :<|> GetReferences
   :<|> GetIdentifiers
@@ -1097,7 +1097,7 @@ getDefinitionSite ::
   -> HCE.LocatableEntity
   -> T.Text
   -> ReaderT Environment IO HCE.DefinitionSite
-getDefinitionSite packageId componentId modName entity name =
+getDefinitionSite packageId componentId modName entity name' =
   withPackageInfo packageId $ \packageInfo' ->
     withModulePath packageInfo' componentId modName $ \modPath ->
       let findDefSite ::
@@ -1113,7 +1113,8 @@ getDefinitionSite packageId componentId modName entity name =
                   Nothing
               _ -> do
                 let mbDefinitionSite =
-                      case entity of
+                      let name = fixDots name'
+                      in case entity of
                         HCE.Typ ->
                           HM.lookup (HCE.OccName name) $
                           HCE.types (defSiteMap :: HCE.DefinitionSiteMap)
@@ -1131,7 +1132,7 @@ getDefinitionSite packageId componentId modName entity name =
                     BSL.concat
                       [ toLazyBS . T.pack $ show entity
                       , " "
-                      , toLazyBS name
+                      , toLazyBS name'
                       , " "
                       , " not found in module "
                       , toLazyBS $ HCE.getHaskellModulePath modPath
@@ -1163,7 +1164,16 @@ getDefinitionSite packageId componentId modName entity name =
               case eitherDefinitionSiteMap of
                 Right definitionSiteMap -> findDefSite pId definitionSiteMap
                 Left e -> error500 (BSL.fromStrict $ BSC.pack e)
-              
+
+-- | "." and ".." is a special case because of the Path Segment Normalization:
+-- https://tools.ietf.org/html/rfc3986#section-6.2.2.3
+-- The segments “..” and “.” can be removed from a URL by a browser.
+-- https://stackoverflow.com/questions/3856693/a-url-resource-that-is-a-dot-2e
+fixDots :: T.Text -> T.Text
+fixDots " ." = "."
+fixDots " .." = ".."
+fixDots t = t
+
 buildLinkHeader :: T.Text -> Paginated a -> Natural -> Natural -> T.Text
 buildLinkHeader url paginated currentPage perPage =
   T.intercalate
@@ -1367,9 +1377,10 @@ findIdentifiers ::
   -> Maybe Int
   -> Maybe Int
   -> ReaderT Environment IO (Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] [HCE.ExternalIdentifierInfo])
-findIdentifiers packageId query mbPage mbPerPage =
+findIdentifiers packageId query' mbPage mbPerPage =  
   withPackageInfo packageId $ \packageInfo' ->
-    let respond identifiers = do
+    let query = fixDots query'
+        respond identifiers = do
           (paginatedIdentifiers, page, perPage, totalCount) <-
             paginateItems mbPage mbPerPage identifiers
           let url =
@@ -1379,7 +1390,7 @@ findIdentifiers packageId query mbPage mbPerPage =
                   (Proxy :: Proxy API)
                   (Proxy :: Proxy GetIdentifiers)
                   packageId
-                  query
+                  query'
                   Nothing
                   Nothing
               linkHeader = buildLinkHeader url paginatedIdentifiers page perPage
@@ -1435,7 +1446,8 @@ findGlobalIdentifiers ::
   -> Maybe Int
   -> Maybe Int
   -> ReaderT Environment IO (Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] [HCE.ExternalIdentifierInfo])
-findGlobalIdentifiers query mbPage mbPerPage = do
+findGlobalIdentifiers query' mbPage mbPerPage = do
+  let query = fixDots query'
   globalIdentifierMap <- asks envGlobalIdentifierMap
   let maxItems = 500
   let identifiers
@@ -1451,7 +1463,7 @@ findGlobalIdentifiers query mbPage mbPerPage = do
         safeLink
           (Proxy :: Proxy API)
           (Proxy :: Proxy GetGlobalIdentifiers)
-          query
+          query'
           Nothing
           Nothing
       linkHeader = buildLinkHeader url paginatedIdentifiers page perPage
