@@ -3,7 +3,7 @@ import {urls} from '../utils/api-urls';
 
 export default Ember.Route.extend({
   store : Ember.inject.service('store'),
-  model (params) {    
+  model (params) {
     return this.get('store').loadPackage(params.packageId)
       .catch((e) => {console.log(e);this.transitionTo("/package-not-found");});
   },
@@ -11,9 +11,6 @@ export default Ember.Route.extend({
     this._super(controller, model);
     const packageId = this.modelFor('package').id;
     controller.set('bottomPanelVisible',false);
-    controller.set('createSearchUrlFunction',(query) => {
-      return urls.identifierSearchUrl(packageId,query);
-    });
   },  
   actions : {
     openFile  (filePath) {

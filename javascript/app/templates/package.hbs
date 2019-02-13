@@ -11,6 +11,7 @@
                placeholder="Identifier" as |identifier|}}
                 <span class="source-code-font">{{identifier.demangledOccName}} :: {{type-signature-text components=identifier.idType.components}}</span>
                 <div class="module-name">
+                    <b>{{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}}</b>                    
                     {{#if identifier.locationInfo.modulePath}}
                         {{identifier.locationInfo.modulePath}}
                     {{else}}
@@ -19,6 +20,18 @@
                 </div>
             {{/input-with-autocomplete}}
         </span>
+        {{#radio-button
+           value="currentPackage"
+           groupValue=searchMode
+           changed="searchModeChanged"}}
+            <span>in {{model.id}}</span>
+        {{/radio-button}}
+        {{#radio-button
+           value="allPackages"
+           groupValue=searchMode
+           changed="searchModeChanged"}}
+            <span>in all packages</span>
+        {{/radio-button}}        
         {{#if currentFile}}
             <span class="package-header-filename">
                 {{currentFile}}

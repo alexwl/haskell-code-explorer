@@ -1,16 +1,35 @@
 import Ember from 'ember';
 import {goToDefinition} from '../utils/go-to-definition';
+import {urls} from '../utils/api-urls';
+
 export default Ember.Controller.extend({
   store : Ember.inject.service('store'),
   currentFile : null,
   loadItemsFunction : null,
   query : null,
+  searchMode : "currentPackage",
+  createSearchUrlFunction : Ember.computed("searchMode",function() {    
+    const packageId = this.get('model.id');
+    const query = this.get('query');    
+    if(this.get('searchMode') === "currentPackage") {
+      return (query) => urls.identifierSearchUrl(packageId,query);
+    } else {    
+      return (query) => urls.globalIdentifiersUrl(query);
+    }
+  }),
   actions : {
+    searchModeChanged () {
+      
+    },
     searchIdentifier (query) {
       if(query) {
         this.set('currentFile',null);
-        document.title = this.get('model.id');        
-        this.transitionToRoute('package.search',query);
+        document.title = this.get('model.id');
+        if(this.get('searchMode') === "currentPackage") {
+          this.transitionToRoute('package.search',query);
+        } else {
+          this.transitionToRoute('search',query);
+        }
       }
     },
     showIdentifier (identifierInfo) {

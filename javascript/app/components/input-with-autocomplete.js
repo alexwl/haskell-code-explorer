@@ -97,10 +97,15 @@ export default Ember.Component.extend({
     });
   },
   showAutocompleteList() {
-    this.$autocompleteContainer.css({
-      "display":"block"
-    });
+    if(this.get('query') !== "") {
+      this.$autocompleteContainer.css({
+        "display":"block"
+      });
+    }
   },
+  searchUrlObserver : Ember.observer('createSearchUrlFunction',function() {
+    this.notifyPropertyChange('query');
+  }),  
   queryObserver : Ember.observer("query",function() {
     if(this.get('query')) {
       const perPage = this.get('maxItems') ? this.get('maxItems') : 10;
