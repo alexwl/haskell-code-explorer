@@ -64,11 +64,11 @@ Ember.run.next(this,function(){e.cleanup(),e.didInsertElement()})}),cleanup:func
 this._super.apply(this,arguments)
 var t=this.element.querySelector(".source-code-container")
 t.innerHTML=this.get("html"),this.sourceCodeContainerElement=t
-for(var s=this.sourceCodeContainerElement.querySelectorAll("tr > td:nth-child(2)"),l=s.length,i=0;i<l;){var r=s.item(i)
-if(0===r.innerText.indexOf("module "))break
-r.innerHTML=(0,o.addLinksToLanguageExtensionsDocs)(r.innerText),i+=1}this.element.parentNode.scrollTop=0
-var a=this.element.querySelector(".declarations-content")
-this.set("query",""),a&&(a.scrollTop=0),Ember.run.next(this,function(){u(t,e),(0,n.initializeLineSelection)(t,e),h(t,e)})},willDestroyElement:function(){this.cleanup()},actions:{goToLine:function(e){window.location.hash="L"+e},toggleShowDeclarations:function(){this.toggleProperty("showDeclarations")}}})}),define("haskell-code-explorer/components/identifier-info",["exports","haskell-code-explorer/utils/go-to-definition"],function(e,t){Object.defineProperty(e,"__esModule",{value:!0}),e.default=Ember.Component.extend({store:Ember.inject.service("store"),downloadedDocumentation:null,didInsertElement:function(){var e=this,n=function(n){if(n.target.dataset.location){var o=void 0
+for(var s=this.sourceCodeContainerElement.querySelectorAll("tr > td:nth-child(2)"),l=s.length,i=0;i<l;){var r=s.item(i),a=r.textContent
+if(a){if(0===a.indexOf("module "))break
+r.innerHTML=(0,o.addLinksToLanguageExtensionsDocs)(a)}i+=1}this.element.parentNode.scrollTop=0
+var c=this.element.querySelector(".declarations-content")
+this.set("query",""),c&&(c.scrollTop=0),Ember.run.next(this,function(){u(t,e),(0,n.initializeLineSelection)(t,e),h(t,e)})},willDestroyElement:function(){this.cleanup()},actions:{goToLine:function(e){window.location.hash="L"+e},toggleShowDeclarations:function(){this.toggleProperty("showDeclarations")}}})}),define("haskell-code-explorer/components/identifier-info",["exports","haskell-code-explorer/utils/go-to-definition"],function(e,t){Object.defineProperty(e,"__esModule",{value:!0}),e.default=Ember.Component.extend({store:Ember.inject.service("store"),downloadedDocumentation:null,didInsertElement:function(){var e=this,n=function(n){if(n.target.dataset.location){var o=void 0
 try{o=JSON.parse(n.target.dataset.location)}catch(e){console.log(e)}o&&(0,t.goToDefinition)(e.get("store"),o,n.which,e.get("currentLineNumber"))}}
 this.element.addEventListener("mouseup",n),this._onmouseup=n},willDestroyElement:function(){this._onmouseup&&this.element.removeEventListener("mouseup",this._onmouseup)},isNaughtyRecSel:Ember.computed("identifierInfo",function(){var e=this.get("identifierInfo")
 return!!e&&"RecSelIdNaughty"===e.details}),isExternalIdentifier:Ember.computed("identifierInfo",function(){var e=this.get("identifierInfo")
@@ -216,4 +216,4 @@ return c&&o(c,e),[a]}}}function o(e,t){e.parentNode.scrollIntoView()
 var n=t.parentNode.parentNode,o=n.offsetHeight
 t.offsetHeight-n.scrollTop>o&&(n.scrollTop=n.scrollTop-(o/2-20))}function s(e,t,n){Array.prototype.slice.call(e.querySelectorAll("td.line-content")).forEach(function(e){var o=parseInt(e.id.substring(2))
 o>=t&&o<=n?e.classList.add("highlighted-line"):e.classList.remove("highlighted-line")})}Object.defineProperty(e,"__esModule",{value:!0}),e.initializeLineSelection=t,e.highlightLines=s,e.highlightSelectedLines=n}),define("haskell-code-explorer/config/environment",[],function(){try{var e="haskell-code-explorer/config/environment",t=document.querySelector('meta[name="'+e+'"]').getAttribute("content"),n=JSON.parse(unescape(t)),o={default:n}
-return Object.defineProperty(o,"__esModule",{value:!0}),o}catch(t){throw new Error('Could not read config from meta tag with name "'+e+'".')}}),runningTests||require("haskell-code-explorer/app").default.create({staticUrlPrefix:"/files",apiUrlPrefix:"/api",haskellCodeExplorerDirectory:".haskell-code-explorer",title:"Haskell Code Explorer",name:"haskell-code-explorer",version:"0.0.1+0b17136d"})
+return Object.defineProperty(o,"__esModule",{value:!0}),o}catch(t){throw new Error('Could not read config from meta tag with name "'+e+'".')}}),runningTests||require("haskell-code-explorer/app").default.create({staticUrlPrefix:"/files",apiUrlPrefix:"/api",haskellCodeExplorerDirectory:".haskell-code-explorer",title:"Haskell Code Explorer",name:"haskell-code-explorer",version:"0.0.1+e8ded03e"})

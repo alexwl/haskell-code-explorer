@@ -481,14 +481,17 @@ export default Ember.Component.extend({
     const lineCount = lines.length;
     let i = 0;
     while(i < lineCount) {
-      let line = lines.item(i);
-      // A file-header pragma must precede the module keyword in the file.
-      if(line.innerText.indexOf("module ") === 0) {        
-        break;
-      } else {        
-        line.innerHTML = addLinksToLanguageExtensionsDocs(line.innerText);
-        i = i + 1;
+      const line = lines.item(i);
+      const lineText = line.textContent;
+      if(lineText) {
+        // A file-header pragma must precede the module keyword in the file.
+        if(lineText.indexOf("module ") === 0) {
+          break;
+        } else {
+          line.innerHTML = addLinksToLanguageExtensionsDocs(lineText);
+        }
       }
+      i = i + 1;
     }
     
     this.element.parentNode.scrollTop = 0;
