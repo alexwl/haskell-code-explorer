@@ -8,10 +8,9 @@ export default Ember.Route.extend({
       .catch((e) => {console.log(e);this.transitionTo("/package-not-found");});
   },
   setupController(controller, model) {
-    this._super(controller, model);
-    const packageId = this.modelFor('package').id;
+    this._super(controller, model);    
     controller.set('bottomPanelVisible',false);
-  },  
+  },
   actions : {
     openFile  (filePath) {
       this.transitionTo('package.show.file',filePath);

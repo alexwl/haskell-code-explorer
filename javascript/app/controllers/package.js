@@ -9,18 +9,14 @@ export default Ember.Controller.extend({
   query : null,
   searchMode : "currentPackage",
   createSearchUrlFunction : Ember.computed("searchMode",function() {    
-    const packageId = this.get('model.id');
-    const query = this.get('query');    
+    const packageId = this.get('model.id');    
     if(this.get('searchMode') === "currentPackage") {
       return (query) => urls.identifierSearchUrl(packageId,query);
-    } else {    
+    } else {
       return (query) => urls.globalIdentifiersUrl(query);
     }
   }),
   actions : {
-    searchModeChanged () {
-      
-    },
     searchIdentifier (query) {
       if(query) {
         this.set('currentFile',null);
