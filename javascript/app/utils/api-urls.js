@@ -46,5 +46,8 @@ export const urls = {
   },
   globalIdentifiersUrl : function (query) {
     return config.APP.apiUrlPrefix + "/globalIdentifiers/"+fixDots(encodeURIComponent(query));
+  },
+  hoogleDocsUrl : function (packageId,moduleName,entity,name) {
+    return config.APP.apiUrlPrefix + "/hoogleDocs/"+packageId+"/"+encodeURIComponent(moduleName)+"/"+entity+"/"+fixDots(encodeURIComponent(name));
   }
 }

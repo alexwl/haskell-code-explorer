@@ -54,8 +54,19 @@ export default Ember.Component.extend({
             Ember.run.next(this,() => {
               if(currentIdentifier === this.get('identifierInfo')) {                
                 this.set('downloadedDocumentation',definitionSite.documentation);
-              }});
-          });
+              }})
+          }).catch(() => {            
+            this.get('store').loadHoogleDocs(packageId,
+                                             locationInfo.moduleName,
+                                             locationInfo.entity,
+                                             locationInfo.name)
+              .then((hoogleDocs) => {
+                Ember.run.next(this,() => {
+                  if(currentIdentifier === this.get('identifierInfo')) {
+                    this.set('downloadedDocumentation',hoogleDocs);
+                  }});
+              });
+          });;
       }
     }
   })

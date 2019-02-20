@@ -15,6 +15,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE PatternGuards #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main where
@@ -29,21 +30,23 @@ import Control.Exception
   , throwIO
   , try
   )
+import Control.Lens hiding(children,index)
 import Control.Monad (foldM, unless)
 import Control.Monad.Except (ExceptT(..))
-import Control.Monad.State.Strict (StateT(..))
 import Control.Monad.Reader (MonadIO, MonadReader, ReaderT(..), asks, liftIO)
+import Control.Monad.State.Strict (StateT(..))
 import qualified Data.Aeson as A
+import qualified Data.Aeson.Lens as AL
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Short as BSS
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Short as BSS
 import Data.Default (def)
 import Data.Either (lefts, rights)
 import qualified Data.HashMap.Strict as HM
 import Data.Hashable (Hashable)
-import qualified Data.IntervalMap.Strict as IVM
 import Data.IntervalMap.Interval (Interval(..), subsumes)
+import qualified Data.IntervalMap.Strict as IVM
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, mapMaybe)
@@ -75,6 +78,7 @@ import GHC.Exts (Down(..), groupWith)
 import GHC.Generics (Generic)
 import qualified HaskellCodeExplorer.Types as HCE
 import Network.HTTP.Types (hContentEncoding, hContentType, status200, status404)
+import Network.URI.Encode (encode)
 import Network.Mime (defaultMimeLookup)
 import Network.Wai
   ( Application
@@ -86,6 +90,7 @@ import Network.Wai
   , responseLBS
   )
 import Network.Wai.Handler.Warp (run)
+import qualified Network.Wreq as Wreq
 import Network.Wai.Middleware.RequestLogger
   ( Destination(..)
   , OutputFormat(..)
@@ -128,6 +133,7 @@ import Servant
   , addHeader
   , err404
   , err500
+  , err502
   , errBody
   , serve
   )
@@ -175,6 +181,7 @@ data ServerConfig = ServerConfig
   , configJsDistDirectory :: !(Maybe String)
   , configMaxPerPage :: !Int
   , configStore :: !(Maybe Store)
+  , configUseHoogleApi :: !Bool
   } deriving (Show, Eq)
 
 data PackagesPath
@@ -249,7 +256,11 @@ configParser =
       strOption
         (long "use-store-mmap" <>
          help "Use existing key-value store. mmap 'values' file." <>
-         metavar "PATH_TO_DATA_DIRECTORY")))
+         metavar "PATH_TO_DATA_DIRECTORY"))) <*>
+  switch
+    (long "use-hoogle-api" <>
+     help
+       "Use public Hoogle JSON API (https://github.com/ndmitchell/hoogle/blob/3dbf68bfd701f942d3af2e6debb74a0a78cd392e/docs/API.md#json-api) to get documentation for not indexed packages (disabled by default)")
 
 --------------------------------------------------------------------------------
 -- Loading packages
@@ -914,6 +925,7 @@ type API = GetAllPackages
   :<|> GetIdentifiers
   :<|> GetGlobalReferences
   :<|> GetGlobalIdentifiers
+  :<|> GetHoogleDocs 
 
 type GetAllPackages = "api" :> "packages" :> Get '[JSON] AllPackages
 
@@ -959,7 +971,14 @@ type GetGlobalIdentifiers = "api" :> "globalIdentifiers"
   :> QueryParam "page" Int
   :> QueryParam "per_page" Int
   :> Get '[JSON] (Headers '[Header "Link" T.Text,Header "X-Total-Count" Int]
-                 [HCE.ExternalIdentifierInfo])  
+                 [HCE.ExternalIdentifierInfo])
+
+type GetHoogleDocs = "api" :> "hoogleDocs"
+  :> Capture "packageId" PackageId
+  :> Capture "moduleName" HCE.HaskellModuleName
+  :> Capture "entity" HoogleItemSort
+  :> Capture "name" T.Text
+  :> Get '[JSON] T.Text  
 
 instance AllCTRender '[ JSON] AllPackages where
   handleAcceptH _ _ (AllPackages bytestring) =
@@ -971,6 +990,11 @@ instance FromHttpApiData HCE.LocatableEntity where
   parseQueryParam "Inst" = Right HCE.Inst
   parseQueryParam "Mod" = Right HCE.Mod
   parseQueryParam val = Left $ T.append "Incorrect LocatableEntity : " val
+
+instance FromHttpApiData HoogleItemSort where
+  parseQueryParam "Val" = Right Val
+  parseQueryParam "Typ" = Right Typ
+  parseQueryParam val = Left $ T.append "Incorrect HoogleItemSort : " val
 
 instance ToHttpApiData HCE.LocatableEntity where
   toUrlPiece HCE.Val = "ValueEntity"
@@ -1474,6 +1498,75 @@ findGlobalIdentifiers query' mbPage mbPerPage = do
       addHeaders = addHeader linkHeader . addHeader totalCount
   return . addHeaders . paginatedItems $ paginatedIdentifiers
 
+data HoogleResultItem = HoogleResultItem
+  { sort :: HoogleItemSort
+  , moduleName :: T.Text
+  , htmlDocs :: T.Text
+  } deriving (Show, Eq)
+
+data HoogleItemSort
+  = Val
+  | Typ
+  deriving (Show, Eq)
+
+valueToHoogleResultItem :: A.Value -> Maybe HoogleResultItem
+valueToHoogleResultItem value =
+  let mbHtmlDocs = value ^? AL.key "docs" . AL._String
+      mbModuleName = value ^? AL.key "module" . AL.key "name" . AL._String
+      urlToSort :: T.Text -> Maybe HoogleItemSort
+      urlToSort url
+        | T.isInfixOf "#v" url = Just Val
+      urlToSort url
+        | T.isInfixOf "#t" url = Just Typ
+      urlToSort _ = Nothing
+      mbResultSort = value ^? AL.key "url" . AL._String >>= urlToSort
+   in HoogleResultItem <$> mbResultSort <*> mbModuleName <*> mbHtmlDocs      
+
+hoogleApiHost :: String
+hoogleApiHost = "https://hoogle.haskell.org/"
+
+getHoogleDocs ::
+     PackageId
+  -> HCE.HaskellModuleName
+  -> HoogleItemSort
+  -> T.Text
+  -> ReaderT Environment IO T.Text
+getHoogleDocs packageId (HCE.HaskellModuleName moduleName) itemSort name
+  | Just (packageName, _mbVersion) <- parsePackageId packageId = do
+    useHoogle <- asks (configUseHoogleApi . envConfig)
+    unless useHoogle $ error404 "Hoogle API is disabled"
+    let hoogleQuery =
+          T.unpack name ++
+          " is:exact package:" ++ T.unpack (getPackageName packageName)
+        url = hoogleApiHost ++ "?hoogle=" ++ encode hoogleQuery ++ "&mode=json"        
+        error502 e =
+          throwServantError $
+          err502 {errBody = BSL.fromStrict $ BSC.pack $ show e}
+    response <- liftIO $ handleSync error502 (Wreq.get url)
+    let body = response ^. Wreq.responseBody
+    case A.decode body of
+      Just (value :: A.Value) ->
+        case value of
+          A.Array vector ->
+            let items = mapMaybe valueToHoogleResultItem $ V.toList vector
+                findItem :: Bool -> [HoogleResultItem] -> Maybe HoogleResultItem
+                findItem exactModuleMatch =
+                  L.find
+                    (\HoogleResultItem {sort = s, moduleName = m} ->
+                       s == itemSort && (exactModuleMatch || m == moduleName))
+             in case findItem True items <|> findItem False items of
+                  Just item -> return $ htmlDocs item
+                  _ -> error404 ""
+          _ ->
+            error500 $
+            BSL.append "Unexpected JSON response from hoogle.haskell.org" body
+      Nothing ->
+        error500 $
+        BSL.append "Unexpected response from hoogle.haskell.org: " body
+getHoogleDocs packageId _ _ _ =
+  error404 $
+  BSL.append "Incorrect package id: " (toLazyBS $ getPackageId packageId)
+
 paginateItems ::
      Maybe Int
   -> Maybe Int
@@ -1737,7 +1830,8 @@ server env =
      getReferences :<|>
      findIdentifiers :<|>
      getGlobalReferences :<|>
-     findGlobalIdentifiers)
+     findGlobalIdentifiers :<|>
+     getHoogleDocs)
   where
     toServantHandler :: ReaderT Environment IO a -> Handler a
     toServantHandler ma = Handler . ExceptT . try . runReaderT ma $ env

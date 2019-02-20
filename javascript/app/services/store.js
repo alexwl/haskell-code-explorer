@@ -53,6 +53,7 @@ export default Ember.Service.extend({
     this.expressions = {};
     this.references = {};
     this.globalReferences = {};
+    this.hoogleDocs = {};
   },
   loadPackage(packageId) {
     const packageInfo = this.packages[packageId];
@@ -144,11 +145,24 @@ export default Ember.Service.extend({
     if(globalReferences) {
       return new RSVP.Promise((resolve) => {resolve(globalReferences);});
     } else {
-      const url = urls.globalReferencesUrl(externalId);      
+      const url = urls.globalReferencesUrl(externalId);
       return Ember.$.getJSON(url).then((refs) => {
         this.globalReferences[externalId] = refs;
         return refs;
       });
     }
   },
+  loadHoogleDocs(packageId,moduleName,entity,name) {
+    const id = packageId + "/" + moduleName + "/" + entity + "/" + name;
+    const hoogleDoc = this.hoogleDocs[id];
+    if(hoogleDoc) {
+      return new RSVP.Promise((resolve)=>{resolve(hoogleDoc);});
+    } else {
+      const url = urls.hoogleDocsUrl(packageId,moduleName,entity,name);
+      return Ember.$.getJSON(url).then((hoogleDoc) => {
+        this.hoogleDocs[id] = hoogleDoc;
+        return hoogleDoc;
+      });
+    }
+  }
 });
