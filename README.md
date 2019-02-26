@@ -28,6 +28,9 @@ Reading and understanding code is an essential part of the software development 
 * Find references (cross-package)
   ![References](https://haskell-code-explorer.mfix.io/references.png)
 
+* Search for Haskell functions, data and type constructors by name (in the current package / in all indexed packages)
+  ![Search](https://haskell-code-explorer.mfix.io/search.png)
+
 * Type of each expression<br />
   ![Expression](https://haskell-code-explorer.mfix.io/expressions.png)<br />
   Select a piece of text to get the type of each Haskell expression inside the selection.
@@ -133,6 +136,12 @@ Load multiple indexed packages and start the server:
 
 ```bash
 haskell-code-server --package PATH1 --package PATH2 --package PATH3 --port 8080
+```
+
+Load the indexed package and start the server, use Hoogle API (https://github.com/ndmitchell/hoogle/blob/3dbf68bfd701f942d3af2e6debb74a0a78cd392e/docs/API.md#json-api) to get documentation for functions and types defined in other packages (`haskell-code-server` makes requests to https://hoogle.haskell.org/):
+
+```bash
+haskell-code-server --package PATH --port 8080 --use-hoogle-api
 ```
 
 Open [http://localhost:8080](http://localhost:8080) in a browser to explore source code of the package.
