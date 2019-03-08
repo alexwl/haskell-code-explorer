@@ -22,14 +22,12 @@
         </span>
         {{#radio-button
            value="currentPackage"
-           groupValue=searchMode
-           changed="searchModeChanged"}}
+           groupValue=searchMode}}
             <span>in {{model.id}}</span>
         {{/radio-button}}
         {{#radio-button
            value="allPackages"
-           groupValue=searchMode
-           changed="searchModeChanged"}}
+           groupValue=searchMode}}
             <span>in all packages</span>
         {{/radio-button}}        
         {{#if currentFile}}
