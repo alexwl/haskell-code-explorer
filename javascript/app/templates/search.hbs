@@ -33,6 +33,8 @@
                                 <div class="identifier-module">
                                     {{#if identifier.locationInfo.modulePath}}
                                         Defined in <b> {{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}} </b> <a href="/package/{{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}}/show/{{identifier.locationInfo.modulePath}}">{{identifier.locationInfo.modulePath}}</a>
+                                    {{else}}
+                                        Defined in <b> {{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}} </b> {{identifier.locationInfo.moduleName}}
                                     {{/if}}
                                 </div>
                                 <div>{{{identifier.doc}}}</div>
