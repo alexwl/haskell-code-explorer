@@ -1,7 +1,8 @@
 import Ember from 'ember';
 import {goToDefinition} from '../utils/go-to-definition';
 
-export default Ember.Controller.extend({  
+export default Ember.Controller.extend({
+  store : Ember.inject.service('store'),
   queryObserver : Ember.observer("query",function() {    
     Ember.run.debounce(this, () => {
       const regExp = new RegExp(this.get('query'),"i");
