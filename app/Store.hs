@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
@@ -41,9 +42,13 @@ data Location = Location
   } deriving (Show, Eq, Ord, Generic, NFData)
 
 instance Serialize Location
+
+#if MIN_VERSION_cereal(0,5,8)
+#else
 instance Serialize BSS.ShortByteString where
   put = put . BSS.fromShort
   get = BSS.toShort <$> get
+#endif  
 
 class StoreItem item where
   toByteString :: item -> BS.ByteString
