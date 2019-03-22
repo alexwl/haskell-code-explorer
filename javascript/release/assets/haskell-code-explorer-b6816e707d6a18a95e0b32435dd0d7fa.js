@@ -39,14 +39,14 @@ if(n.anchorNode&&n.focusNode&&p(e,n.anchorNode)&&p(e,n.focusNode)&&-1!==l.indexO
 c.setStart(n.anchorNode,n.anchorOffset),c.setEnd(n.focusNode,n.focusOffset)
 var d=c.collapsed,u=void 0,h=void 0,m=void 0,f=void 0
 d?(u=n.focusNode,h=n.focusOffset,m=n.anchorNode,f=n.anchorOffset):(u=n.anchorNode,h=n.anchorOffset,m=n.focusNode,f=n.focusOffset)
-var g=void 0,b=void 0,k=void 0,x=void 0,y=void 0
-if("#text"===u.nodeName){var w=u.parentNode
-if(b=parseInt(w.dataset.start)+h,g=parseInt(w.parentNode.dataset.line),h===u.textContent.length&&null===w.nextSibling){for(var v=u.parentNode.parentNode.parentNode,_=v.nextSibling;""===_.children[1].textContent;)_=_.nextSibling
-y=_.children[1].children[0]}else y=0!==h&&w.nextSibling?w.nextSibling:w}else if("SPAN"===u.nodeName){b=1,g=parseInt(u.parentNode.dataset.line)
+var g=void 0,b=void 0,k=void 0,x=void 0,w=void 0
+if("#text"===u.nodeName){var y=u.parentNode
+if(b=parseInt(y.dataset.start)+h,g=parseInt(y.parentNode.dataset.line),h===u.textContent.length&&null===y.nextSibling){for(var v=u.parentNode.parentNode.parentNode,_=v.nextSibling;""===_.children[1].textContent;)_=_.nextSibling
+w=_.children[1].children[0]}else w=0!==h&&y.nextSibling?y.nextSibling:y}else if("SPAN"===u.nodeName){b=1,g=parseInt(u.parentNode.dataset.line)
 for(var E=u.parentNode.parentNode,I=E.nextSibling;""===I.children[1].textContent;)I=I.nextSibling
-y=I.children[1].children[0]}else if("TD"===u.nodeName){if(h>0){var P=u.children[h-1]
+w=I.children[1].children[0]}else if("TD"===u.nodeName){if(h>0){var P=u.children[h-1]
 b=parseInt(P.dataset.start)}else b=1
-g=parseInt(u.id.slice(2)),y=u.children[0]}if("#text"===m.nodeName)x=parseInt(m.parentNode.dataset.start)+f,k=parseInt(m.parentNode.parentNode.dataset.line)
+g=parseInt(u.id.slice(2)),w=u.children[0]}if("#text"===m.nodeName)x=parseInt(m.parentNode.dataset.start)+f,k=parseInt(m.parentNode.parentNode.dataset.line)
 else if("SPAN"===m.nodeName)x=1,k=parseInt(m.parentNode.dataset.line)
 else if("TD"===m.nodeName){if(f>0){var C=m.children[f-1]
 x=parseInt(C.dataset.start)}else x=1
@@ -54,7 +54,7 @@ k=parseInt(m.id.slice(2))}var T=t.get("store").loadExpressions(t.get("packageId"
 r=!0,T.then(function(e){Ember.run.next(function(){if(e&&e.length>0){e.sort(function(e,t){return s(e.srcSpan.start,t.srcSpan.start)<=0&&s(e.srcSpan.end,t.srcSpan.end)>=0?-1:1})
 var n=e.reduce(function(e,t){var n=Ember.copy(t),s=i(o,t.srcSpan.start,t.srcSpan.end)
 return s?(n.sourceCode=s,e.concat(n)):e},[])
-n.length>0&&(t.set("selectedIdentifier",y),t.set("expressions",n),t.set("currentLineNumber",parseInt(y.parentNode.dataset.line)||1),t.set("hasSelectedExpression",!0))}r=!1})})}}})}
+n.length>0&&(t.set("selectedIdentifier",w),t.set("expressions",n),t.set("currentLineNumber",parseInt(w.parentNode.dataset.line)||1),t.set("hasSelectedExpression",!0))}r=!1})})}}})}
 e.addEventListener("mouseup",c),t._onmouseup=c}}Object.defineProperty(e,"__esModule",{value:!0}),e.default=Ember.Component.extend({store:Ember.inject.service("store"),selectedIdentifier:null,isHoveredOverIdentifier:!1,hasSelectedExpression:!1,showDeclarations:!0,showDeclarationsLabel:Ember.computed("showDeclarations",function(){return this.get("showDeclarations")?"Hide":"Show"}),queryObserver:Ember.observer("query",function(){var e=this
 Ember.run.debounce(this,function(){var t=new RegExp(e.get("query"),"i"),n=e.get("declarations").filter(function(e){return-1!=e.name.search(t)})
 Ember.run.next(function(){e.set("filteredDeclarations",n)})},300)}),identifierLocationInfo:Ember.computed("identifierInfo","identifierOccurrence",function(){var e=this.get("identifierOccurrence"),t=this.get("identifierInfo")
@@ -115,7 +115,7 @@ this._super.apply(this,arguments),Ember.run.next(this,function(){var o=function(
 !e.get("hidden")&&o<700?t(e,!1):e.get("hidden")&&o>700&&n(e,!1)}}
 e._onresize=o,window.addEventListener("resize",o)
 var s=Ember.$(e.get("alsoResizeElementId"))
-Ember.$(e.element).resizable({maxWidth:800,minWidth:200,handles:"e",resize:function(t,n){Ember.run.next(e,function(){s.css({left:n.size.width})})}}),e.$alsoResizeElement=s})},hideButtonLabel:Ember.computed("hidden",function(){return this.get("hidden")?"&gt;":"&lt;"}),willDestroyElement:function(){this._onresize&&window.removeEventListener("resize",this._onresize)},actions:{hide:function(){this.get("hidden")?n(this,!0):t(this,!0)}}})}),define("haskell-code-explorer/components/text-file",["exports","haskell-code-explorer/utils/line-selection"],function(e,t){function n(e){return e.replace(/[\"&<>]/g,function(e){return{'"':"&quot;","&":"&amp;","<":"&lt;",">":"&gt;"}[e]})}function o(e){var t=0
+Ember.$(e.element).resizable({maxWidth:800,minWidth:200,handles:"e",resize:function(t,n){Ember.run.next(e,function(){s.css({left:n.size.width})})}}),e.$alsoResizeElement=s,window.innerWidth<700&&(e.set("hidden",!0),t(e,!1))})},hideButtonLabel:Ember.computed("hidden",function(){return this.get("hidden")?"&gt;":"&lt;"}),willDestroyElement:function(){this._onresize&&window.removeEventListener("resize",this._onresize)},actions:{hide:function(){this.get("hidden")?n(this,!0):t(this,!0)}}})}),define("haskell-code-explorer/components/text-file",["exports","haskell-code-explorer/utils/line-selection"],function(e,t){function n(e){return e.replace(/[\"&<>]/g,function(e){return{'"':"&quot;","&":"&amp;","<":"&lt;",">":"&gt;"}[e]})}function o(e){var t=0
 return"<table class='source-code'><tbody>"+e.split("\n").map(function(e){return"<tr><td id='LN"+ ++t+"' class='line-number'>"+t+"</td><td id='LC"+t+"' class='line-content'>"+n(e)+"</td></tr>"}).join("")+"</tbody></table>"}Object.defineProperty(e,"__esModule",{value:!0})
 var s=["markdown","mdown","mkdn","mkd","md"]
 e.default=Ember.Component.extend({isMarkdown:Ember.computed("path",function(){var e=this.get("path").split(".").pop()
@@ -216,4 +216,4 @@ return c&&o(c,e),[a]}}}function o(e,t){e.parentNode.scrollIntoView()
 var n=t.parentNode.parentNode,o=n.offsetHeight
 t.offsetHeight-n.scrollTop>o&&(n.scrollTop=n.scrollTop-(o/2-20))}function s(e,t,n){Array.prototype.slice.call(e.querySelectorAll("td.line-content")).forEach(function(e){var o=parseInt(e.id.substring(2))
 o>=t&&o<=n?e.classList.add("highlighted-line"):e.classList.remove("highlighted-line")})}Object.defineProperty(e,"__esModule",{value:!0}),e.initializeLineSelection=t,e.highlightLines=s,e.highlightSelectedLines=n}),define("haskell-code-explorer/config/environment",[],function(){try{var e="haskell-code-explorer/config/environment",t=document.querySelector('meta[name="'+e+'"]').getAttribute("content"),n=JSON.parse(unescape(t)),o={default:n}
-return Object.defineProperty(o,"__esModule",{value:!0}),o}catch(t){throw new Error('Could not read config from meta tag with name "'+e+'".')}}),runningTests||require("haskell-code-explorer/app").default.create({staticUrlPrefix:"/files",apiUrlPrefix:"/api",haskellCodeExplorerDirectory:".haskell-code-explorer",title:"Haskell Code Explorer",name:"haskell-code-explorer",version:"0.0.1+5ce658d2"})
+return Object.defineProperty(o,"__esModule",{value:!0}),o}catch(t){throw new Error('Could not read config from meta tag with name "'+e+'".')}}),runningTests||require("haskell-code-explorer/app").default.create({staticUrlPrefix:"/files",apiUrlPrefix:"/api",haskellCodeExplorerDirectory:".haskell-code-explorer",title:"Haskell Code Explorer",name:"haskell-code-explorer",version:"0.0.1+cac568f0"})
