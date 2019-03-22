@@ -206,7 +206,8 @@ configParser =
    some
      (strOption
         (long "package" <> short 'p' <> metavar "PATH" <>
-         help "Path to a Cabal package"))) <*>
+         help "Path to a Cabal package (Default: '.')"))
+   <|> pure (Directories ["."])) <*>
   (pure 8080 <|>
    option
      auto

@@ -39,7 +39,9 @@ import Options.Applicative
   , optional
   , progDesc
   , short
+  , showDefault
   , strOption
+  , value
   )
 import Paths_haskell_code_explorer as HSE (version)  
 import System.Directory (createDirectoryIfMissing)
@@ -160,7 +162,7 @@ configParser :: Parser IndexerConfig
 configParser =
   IndexerConfig <$>
   strOption
-    (long "package" <> short 'p' <> metavar "PATH" <>
+    (long "package" <> short 'p' <> metavar "PATH" <> value "." <> showDefault <>
      help "Path to a Cabal package") <*>
   optional
     (strOption
