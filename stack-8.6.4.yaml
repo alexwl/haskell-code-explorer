@@ -1,0 +1,8 @@
+resolver: lts-13.12
+packages:
+- '.'
+- location: vendor/cabal-helper-0.8.1.2
+  extra-dep: true
+allow-newer: true
+extra-deps:
+  - cabal-plan-0.4.0.0
