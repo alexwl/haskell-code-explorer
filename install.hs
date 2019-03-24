@@ -4,6 +4,7 @@
   --ghc-options -Wall
 -}
 
+{-# LANGUAGE CPP #-}
 -- = About
 --
 -- Install multiple versions of haskell-code-indexer, each with the version of
@@ -31,7 +32,7 @@ import Data.Foldable
 import Data.List (dropWhileEnd)
 import qualified Data.Text as T
 import Data.Text.Encoding
-import Development.Shake.FilePath
+import System.FilePath ((<.>), (</>))
 import Options.Applicative
 import System.Directory (copyFile, removeFile)
 import System.Process.Typed
@@ -141,6 +142,13 @@ buildVersion v = do
 
   copyFile fromFile toFile
   removeFile fromFile
+
+exe :: String
+#if defined(mingw32_HOST_OS)
+exe = "exe"
+#else
+exe = ""
+#endif
 
 -- | E.g. @"/home/user/bin"@.
 getLocalBin :: IO FilePath
