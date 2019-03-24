@@ -184,10 +184,12 @@ data ServerConfig = ServerConfig
   , configUseHoogleApi :: !Bool
   } deriving (Show, Eq)
 
-data PackagesPath
-  = DirectoryWithPackages FilePath
-  | Directories [FilePath]
-  deriving (Show, Eq)
+data PackagesPath = PackagesPath
+  { pathDirWithPackages :: !(Maybe FilePath)
+    -- ^ Path to a directory containing Cabal package subdirectories.
+  , pathPackages :: ![FilePath]
+    -- ^ Paths to Cabal packages.
+  } deriving (Show, Eq)
 
 data Store
   = CreateStore FilePath
@@ -198,16 +200,14 @@ data Store
 configParser :: Parser ServerConfig
 configParser =
   ServerConfig <$>
-  ((DirectoryWithPackages <$>
-    strOption
+  parsePackagesPath
+    (strOption
       (long "packages" <> metavar "PATH" <>
-       help "Path to a directory with Cabal packages")) <|>
-   Directories <$>
-   some
-     (strOption
+       help "Path to a directory with Cabal packages"))
+    (some
+      (strOption
         (long "package" <> short 'p' <> metavar "PATH" <>
-         help "Path to a Cabal package (Default: '.')"))
-   <|> pure (Directories ["."])) <*>
+         help "Path to a Cabal package (defaults to '.' if 'packages' not provided either)"))) <*>
   (pure 8080 <|>
    option
      auto
@@ -262,6 +262,11 @@ configParser =
     (long "use-hoogle-api" <>
      help
        "Use public Hoogle JSON API (https://github.com/ndmitchell/hoogle/blob/3dbf68bfd701f942d3af2e6debb74a0a78cd392e/docs/API.md#json-api) to get documentation for not indexed packages (disabled by default)")
+
+parsePackagesPath :: Parser FilePath -> Parser [FilePath] -> Parser PackagesPath
+parsePackagesPath parseDir parsePaths =
+      (PackagesPath <$> fmap Just parseDir <*> parsePaths)
+  <|> pure (PackagesPath Nothing ["."])
 
 --------------------------------------------------------------------------------
 -- Loading packages
@@ -708,10 +713,14 @@ addExternalIdInfo packageId packageInfo = do
 
 findDirectories :: PackagesPath -> IO [FilePath]
 findDirectories p =
-  case p of
-    DirectoryWithPackages dir ->
-      find (depth ==? 0) (fileType ==? Directory &&? filePath /=? dir) dir
-    Directories dirs -> return dirs
+  fmap (pathPackages p <>) packagesInPackageDir
+  where
+    packagesInPackageDir :: IO [FilePath]
+    packagesInPackageDir =
+      case pathDirWithPackages p of
+        Nothing -> return []
+        Just dir ->
+          find (depth ==? 0) (fileType ==? Directory &&? filePath /=? dir) dir
 
 loadPackages ::
      ServerConfig
