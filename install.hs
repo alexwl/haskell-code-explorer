@@ -2,6 +2,7 @@
 {- stack script
   --resolver lts-13.12
   --ghc-options -Wall
+  --package bytestring,text,filepath,directory,optparse-applicative,typed-process
 -}
 
 {-# LANGUAGE CPP #-}
