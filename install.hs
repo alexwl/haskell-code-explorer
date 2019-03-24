@@ -96,7 +96,7 @@ argsParser =
     desc =
       "Install haskell-code-indexer executables with the GHC version they were"
       <> " compiled with appended to their name. Builds everything if you don't"
-      <> " specify options. Not that if you already have an indexer executable"
+      <> " specify options. Note that if you already have an indexer executable"
       <> " without the GHC version appended in your Stack's local bin"
       <> " it will be deleted."
 
