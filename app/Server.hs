@@ -265,8 +265,8 @@ configParser =
 
 parsePackagesPath :: Parser FilePath -> Parser [FilePath] -> Parser PackagesPath
 parsePackagesPath parseDir parsePaths =
-      (PackagesPath <$> fmap Just parseDir <*> parsePaths)
-  <|> pure (PackagesPath Nothing ["."])
+  PackagesPath <$> optional parseDir <*> (parsePaths <|> pure [])
+
 
 --------------------------------------------------------------------------------
 -- Loading packages
@@ -1851,7 +1851,13 @@ application env = serve (Proxy :: Proxy API) (server env)
 
 main :: IO ()
 main = do
+  let addDefaultPath :: ServerConfig -> ServerConfig
+      addDefaultPath config =
+        if configPackagesPath config == PackagesPath Nothing []
+          then config {configPackagesPath = PackagesPath Nothing ["."]}
+          else config
   config <-
+    addDefaultPath <$>
     execParser
       (Options.Applicative.info
          (configParser <**> helper)
@@ -1883,7 +1889,7 @@ main = do
       loggerMiddleware <-
         liftIO $
         mkRequestLogger
-          def {outputFormat = Detailed True, destination = Logger loggerSet}      
+          def {outputFormat = Detailed True, destination = Logger loggerSet}
       let staticFilePrefix = configStaticFilesUrlPrefix config
           mbJsDistPath = configJsDistDirectory config
           environment =
