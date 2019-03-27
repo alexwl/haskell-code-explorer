@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -21,7 +20,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time (getZonedTime)
 import Data.Version (Version(..),showVersion)
-import HaskellCodeExplorer.PackageInfo (createPackageInfo)
+import HaskellCodeExplorer.PackageInfo (createPackageInfo, ghcVersion)
 import qualified HaskellCodeExplorer.Types as HCE
 import Network.URI.Encode (encode)
 import Options.Applicative
@@ -74,26 +73,6 @@ data Compression
   = Gzip
   | NoCompression
   deriving (Show, Eq)
-
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,4,0)
-ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 4, 0], versionTags = []}
-#elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)     
-ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 3, 0], versionTags = []}    
-#elif MIN_VERSION_GLASGOW_HASKELL(8,4,4,0) 
-ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 4, 4, 0], versionTags = []}
-#elif MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
-ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 4, 3, 0], versionTags = []}
-#elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
-ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 2, 2, 0], versionTags = []}
-#else
-ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 0, 2, 0], versionTags = []}
-#endif
 
 versionInfo :: String
 versionInfo =
