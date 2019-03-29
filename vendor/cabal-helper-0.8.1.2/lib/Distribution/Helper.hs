@@ -464,7 +464,7 @@ data LibexecNotFoundError = LibexecNotFoundError String FilePath
 instance Exception LibexecNotFoundError
 instance Show LibexecNotFoundError where
   show (LibexecNotFoundError exe dir) =
-    libexecNotFoundError exe dir "https://github.com/DanielG/cabal-helper/issues"
+    libexecNotFoundError exe dir "https://github.com/alexwl/haskell-code-explorer/issues"
 
 findLibexecExe :: IO FilePath
 findLibexecExe = do
