@@ -42,7 +42,7 @@ import Data.Maybe (fromMaybe, isJust, maybeToList)
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Data.Version (Version(..), showVersion, parseVersion)
+import Data.Version (Version(..), showVersion, parseVersion, makeVersion)
 import Text.ParserCombinators.ReadP (readP_to_S)
 import Digraph (flattenSCCs)
 import Distribution.Helper
@@ -301,24 +301,23 @@ getPackageGhcVersion distDir =
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,4,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 4, 0], versionTags = []}
-#elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)     
+ghcVersion = makeVersion [8, 6, 4, 0]
+#elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 3, 0], versionTags = []}    
-#elif MIN_VERSION_GLASGOW_HASKELL(8,4,4,0) 
+ghcVersion = makeVersion [8, 6, 3, 0]
+#elif MIN_VERSION_GLASGOW_HASKELL(8,4,4,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 4, 4, 0], versionTags = []}
+ghcVersion = makeVersion [8, 4, 4, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 4, 3, 0], versionTags = []}
+ghcVersion = makeVersion [8, 4, 3, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 2, 2, 0], versionTags = []}
+ghcVersion = makeVersion [8, 2, 2, 0]
 #else
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 0, 2, 0], versionTags = []}
-#endif  
-      
+ghcVersion = makeVersion [8, 0, 2, 0]
+#endif
 buildDirectoryTree :: FilePath -> [FilePath] -> (FilePath -> Bool) -> IO HCE.DirTree
 buildDirectoryTree path ignoreDirectories isHaskellModule = do
   (_dir DT.:/ tree) <- DT.readDirectoryWith (const . return $ ()) path
