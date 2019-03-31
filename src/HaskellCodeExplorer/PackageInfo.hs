@@ -34,10 +34,12 @@ import Control.Monad.Logger
   )
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
+import Data.Foldable (toList)
 import qualified Data.HashMap.Strict as HM
 import Data.IORef (readIORef)
 import qualified Data.IntMap.Strict as IM
 import qualified Data.List as L
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromMaybe, isJust, maybeToList)
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -47,15 +49,17 @@ import Text.ParserCombinators.ReadP (readP_to_S)
 import Digraph (flattenSCCs)
 import Distribution.Helper
   ( ChComponentName(..)
+  , ChLibraryName(..)
   , ChEntrypoint(..)
   , ChModuleName(..)
-  , components
-  , entrypoints
-  , ghcOptions
+  , ChComponentInfo(..)
+  , UnitInfo(..)
+  , ProjLoc(..)
+  , DistDir(..)
+  , compilerVersion
+  , allUnits
   , mkQueryEnv
-  , packageId
   , runQuery
-  , sourceDirs
   )
 import DynFlags
   ( DynFlags(..)
@@ -98,6 +102,7 @@ import HscTypes (hsc_EPS, hsc_HPT)
 import Outputable (PprStyle, SDoc, neverQualify, showSDocForUser)
 import Packages (initPackages)
 import Prelude hiding (id)
+import qualified Prelude
 import System.Directory
   ( doesFileExist  
   , findExecutable
@@ -155,29 +160,24 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
                    showVersion packageGhcVersion
               in logErrorN (T.pack message) >> liftIO exitFailure
     Left err -> logErrorN (T.pack err) >> liftIO exitFailure
-  let cabalHelperQueryEnv = mkQueryEnv packageDirectoryAbsPath distDir
-  ((packageName, packageVersion), compInfo) <-
-    liftIO $
-    runQuery
-      cabalHelperQueryEnv
-      ((,) <$> packageId <*>
-       (zip3 <$> components ((,) <$> ghcOptions) <*>
-        components ((,) <$> entrypoints) <*>
-        components ((,) <$> sourceDirs)))
-  let currentPackageId = HCE.PackageId (T.pack packageName) packageVersion
+  units <- liftIO $ flip runQuery cabalHelperQueryEnv $ allUnits Prelude.id
+  let compInfo = concatMap (toList . uiComponents) units
+  let (packageName, packageVersion) = uiPackageId (NE.head units)
+      --  ^ in V1 projects there's only one package so this is sound but note
+      --  this doesn't hold for Stack or V2
+      currentPackageId = HCE.PackageId (T.pack packageName) packageVersion
   logInfoN $ T.append "Indexing " $ HCE.packageIdToText currentPackageId
   let buildComponents =
         L.map
-          (\((options, compName), (entrypoint, _), (srcDirs, _)) ->
+          (\c -> let compName = ciComponentName c in
              ( chComponentNameToComponentId compName
-             , options
-             , chEntrypointsToModules entrypoint
-             , srcDirs
+             , ciGhcOptions c
+             , chEntrypointsToModules (ciEntrypoints c)
+             , ciSourceDirs c
              , chComponentNameToComponentType compName)) .
         L.sortBy
-          (\((_, compName1), _, _) ((_, compName2), _, _) ->
-             compare compName1 compName2) $
-        compInfo
+          (\c1 c2 -> compare (ciComponentName c1) (ciComponentName c2)) $
+        toList compInfo
       libSrcDirs =
         concatMap (\(_, _, _, srcDirs, _) -> srcDirs) .
         filter (\(_, _, _, _, compType) -> HCE.isLibrary compType) $
@@ -245,16 +245,16 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
     chModuleToString (ChModuleName n) = n
     chComponentNameToComponentType :: ChComponentName -> HCE.ComponentType
     chComponentNameToComponentType ChSetupHsName = HCE.Setup
-    chComponentNameToComponentType ChLibName = HCE.Lib
-    chComponentNameToComponentType (ChSubLibName name) =
+    chComponentNameToComponentType (ChLibName ChMainLibName) = HCE.Lib
+    chComponentNameToComponentType (ChLibName (ChSubLibName name)) =
       HCE.SubLib $ T.pack name
     chComponentNameToComponentType (ChFLibName name) = HCE.FLib $ T.pack name
     chComponentNameToComponentType (ChExeName name) = HCE.Exe $ T.pack name
     chComponentNameToComponentType (ChTestName name) = HCE.Test $ T.pack name
     chComponentNameToComponentType (ChBenchName name) = HCE.Bench $ T.pack name
     chComponentNameToComponentId :: ChComponentName -> HCE.ComponentId
-    chComponentNameToComponentId ChLibName = HCE.ComponentId "lib"
-    chComponentNameToComponentId (ChSubLibName name) =
+    chComponentNameToComponentId (ChLibName ChMainLibName) = HCE.ComponentId "lib"
+    chComponentNameToComponentId (ChLibName (ChSubLibName name)) =
       HCE.ComponentId . T.append "sublib-" . T.pack $ name
     chComponentNameToComponentId (ChFLibName name) =
       HCE.ComponentId . T.append "flib-" . T.pack $ name
