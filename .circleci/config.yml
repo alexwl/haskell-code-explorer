@@ -1,0 +1,78 @@
+defaults: &defaults
+  docker:
+    - image: fpco/stack-build:lts
+  steps:
+    - checkout
+    - run:
+        name: Copy provided stack.yaml to stack-build.txt
+        command: cp ${STACK_FILE} stack-build.txt
+    - restore_cache:
+        name: Restore Cached Dependencies
+        keys:
+          - haskell-code-explorer-{{ checksum "stack-build.txt" }}
+    - run:
+        name: Resolve/Update Dependencies
+        command: stack --stack-yaml=${STACK_FILE} setup
+    - run:
+        name: Build
+        command: stack --stack-yaml=${STACK_FILE} -j 2 build --test --no-run-tests
+    - run:
+        name: Install cabal-install
+        command: stack --stack-yaml=${STACK_FILE} -j 2 install cabal-install
+    - run:
+        name: Update list of packages
+        command: stack --stack-yaml=${STACK_FILE} exec --no-ghc-package-path cabal -- update
+    - run:
+        name: Run tests
+        command: stack --stack-yaml=${STACK_FILE} test || stack --stack-yaml=${STACK_FILE} exec --no-ghc-package-path $(stack --stack-yaml=${STACK_FILE} path --dist-dir)/build/test/test
+    - save_cache:
+        name: Cache Dependencies
+        key: haskell-code-explorer-{{ checksum "stack-build.txt" }}
+        paths:
+          - "/root/.stack"
+          - "/root/.cache"
+          - "/root/.cabal"
+          - ".stack-work"
+
+version: 2
+jobs:
+  ghc-8.0.2:
+    environment:
+      - STACK_FILE: "stack-8.0.2.yaml"
+    <<: *defaults
+
+  ghc-8.2.2:
+    environment:
+      - STACK_FILE: "stack-8.2.2.yaml"
+    <<: *defaults
+
+  ghc-8.4.3:
+    environment:
+      - STACK_FILE: "stack-8.4.3.yaml"
+    <<: *defaults
+
+  ghc-8.4.4:
+    environment:
+      - STACK_FILE: "stack-8.4.4.yaml"
+    <<: *defaults
+
+  ghc-8.6.3:
+    environment:
+      - STACK_FILE: "stack-8.6.3.yaml"
+    <<: *defaults
+
+  ghc-8.6.4:
+    environment:
+      - STACK_FILE: "stack-8.6.4.yaml"
+    <<: *defaults
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - ghc-8.0.2
+      - ghc-8.2.2
+      - ghc-8.4.3
+      - ghc-8.4.4
+      - ghc-8.6.3
+      - ghc-8.6.4
