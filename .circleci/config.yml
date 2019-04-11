@@ -16,6 +16,12 @@ jobs:
           name: Build
           command: stack -j 2 build --test --no-run-tests
       - run:
+          name: Install cabal-install
+          command: stack -j 2 install cabal-install
+      - run:
+          name: Update list of packages
+          command: stack exec --no-ghc-package-path cabal -- update
+      - run:
           name: Run tests
           command: stack test || stack exec --no-ghc-package-path $(stack path --dist-dir)/build/test/test
       - save_cache:
@@ -24,4 +30,5 @@ jobs:
           paths:
             - "/root/.stack"
             - "/root/.cache"
+            - "/root/.cabal"
             - ".stack-work"
