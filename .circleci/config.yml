@@ -34,7 +34,7 @@ defaults: &defaults
           - "/root/.cabal"
           - ".stack-work"
 
-version: 2.1
+version: 2
 jobs:
   ghc-8.0.2:
     environment:
