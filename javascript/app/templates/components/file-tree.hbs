@@ -2,6 +2,18 @@
     <div class="input-group">
         {{input class="form-control" value=query placeholder="Filename"}}<a class="hide-file-tree" href="#" {{action "hide"}}>Hide</a>
     </div>
+    <div>
+        {{#radio-button
+           value="alphabetical"
+           groupValue=sortType}}
+            <span>Sort by name</span>
+        {{/radio-button}}
+        {{#radio-button
+           value="type"
+           groupValue=sortType}}
+            <span>Sort by type</span>
+        {{/radio-button}}
+    </div>
 </div>
 <div class="file-tree-content">
     <div class="file-tree"></div>
