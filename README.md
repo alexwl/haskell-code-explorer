@@ -1,5 +1,7 @@
 # Haskell Code Explorer
 
+[![CircleCI](https://circleci.com/gh/alexwl/haskell-code-explorer/tree/master.svg?style=svg)](https://circleci.com/gh/alexwl/haskell-code-explorer/tree/master)
+
 Haskell Code Explorer is a web application for exploring and understanding Haskell codebases. It provides IDE-like code intelligence features such as types and documentation on hover, "go to definition", "find references" and semantic highlighting.
 
 Examples:
@@ -115,11 +117,6 @@ haskell-code-indexer --package PATH
 Index package with specific `dist` directory:
 ```bash
 haskell-code-indexer --package PATH --dist dist-newstyle/build/x86_64-linux/ghc-8.2.2/hpath-0.9.2
-```
-
-Index package built by Stack:
-```bash
-haskell-code-indexer --package PATH --dist $(stack path --dist-dir)
 ```
 
 ## Starting HTTP Server
