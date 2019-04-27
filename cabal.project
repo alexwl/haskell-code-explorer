@@ -17,5 +17,4 @@
 with-compiler: ghc-8.4.4
 
 packages: .
-          vendor/cabal-helper-0.8.1.2
-
+          ./vendor/cabal-helper.git

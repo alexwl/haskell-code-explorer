@@ -34,28 +34,32 @@ import Control.Monad.Logger
   )
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
+import Data.Foldable (toList)
 import qualified Data.HashMap.Strict as HM
 import Data.IORef (readIORef)
 import qualified Data.IntMap.Strict as IM
 import qualified Data.List as L
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromMaybe, isJust, maybeToList)
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Data.Version (Version(..), showVersion, parseVersion)
+import Data.Version (Version(..), showVersion, parseVersion, makeVersion)
 import Text.ParserCombinators.ReadP (readP_to_S)
 import Digraph (flattenSCCs)
 import Distribution.Helper
   ( ChComponentName(..)
+  , ChLibraryName(..)
   , ChEntrypoint(..)
   , ChModuleName(..)
-  , components
-  , entrypoints
-  , ghcOptions
+  , ChComponentInfo(..)
+  , UnitInfo(..)
+  , ProjLoc(..)
+  , DistDir(..)
+  , compilerVersion
+  , allUnits
   , mkQueryEnv
-  , packageId
   , runQuery
-  , sourceDirs
   )
 import DynFlags
   ( DynFlags(..)
@@ -98,6 +102,7 @@ import HscTypes (hsc_EPS, hsc_HPT)
 import Outputable (PprStyle, SDoc, neverQualify, showSDocForUser)
 import Packages (initPackages)
 import Prelude hiding (id)
+import qualified Prelude
 import System.Directory
   ( doesFileExist  
   , findExecutable
@@ -143,41 +148,33 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
           Right distDir -> return distDir
           Left errorMessage ->
             logErrorN (T.pack errorMessage) >> liftIO exitFailure
-  eitherPackageGhcVersion <- liftIO $ getPackageGhcVersion distDir
-  case eitherPackageGhcVersion of
-    Right packageGhcVersion ->
-      if take 2 (versionBranch packageGhcVersion) == take 2 (versionBranch ghcVersion)
-        then return ()
-        else let message =
-                   "GHC version mismatch. haskell-code-indexer: " ++
-                   showVersion ghcVersion ++
-                   ", package: " ++
-                   showVersion packageGhcVersion
-              in logErrorN (T.pack message) >> liftIO exitFailure
-    Left err -> logErrorN (T.pack err) >> liftIO exitFailure
-  let cabalHelperQueryEnv = mkQueryEnv packageDirectoryAbsPath distDir
-  ((packageName, packageVersion), compInfo) <-
-    liftIO $
-    runQuery
-      cabalHelperQueryEnv
-      ((,) <$> packageId <*>
-       (zip3 <$> components ((,) <$> ghcOptions) <*>
-        components ((,) <$> entrypoints) <*>
-        components ((,) <$> sourceDirs)))
-  let currentPackageId = HCE.PackageId (T.pack packageName) packageVersion
+  cabalHelperQueryEnv <- liftIO $ mkQueryEnv (ProjLocV1Dir packageDirectoryAbsPath) (DistDirV1 distDir)
+  ("ghc", packageGhcVersion) <- liftIO $ runQuery compilerVersion cabalHelperQueryEnv
+  unless (take 2 (versionBranch packageGhcVersion) == take 2 (versionBranch ghcVersion)) $
+    let message =
+          "GHC version mismatch. haskell-code-indexer: " ++
+          showVersion ghcVersion ++
+          ", package: " ++
+          showVersion packageGhcVersion
+    in logErrorN (T.pack message) >> liftIO exitFailure
+  units <- liftIO $ flip runQuery cabalHelperQueryEnv $ allUnits Prelude.id
+  let compInfo = concatMap (toList . uiComponents) units
+  let (packageName, packageVersion) = uiPackageId (NE.head units)
+      --  ^ in V1 projects there's only one package so this is sound but note
+      --  this doesn't hold for Stack or V2
+      currentPackageId = HCE.PackageId (T.pack packageName) packageVersion
   logInfoN $ T.append "Indexing " $ HCE.packageIdToText currentPackageId
   let buildComponents =
         L.map
-          (\((options, compName), (entrypoint, _), (srcDirs, _)) ->
+          (\c -> let compName = ciComponentName c in
              ( chComponentNameToComponentId compName
-             , options
-             , chEntrypointsToModules entrypoint
-             , srcDirs
+             , ciGhcOptions c
+             , chEntrypointsToModules (ciEntrypoints c)
+             , ciSourceDirs c
              , chComponentNameToComponentType compName)) .
         L.sortBy
-          (\((_, compName1), _, _) ((_, compName2), _, _) ->
-             compare compName1 compName2) $
-        compInfo
+          (\c1 c2 -> compare (ciComponentName c1) (ciComponentName c2)) $
+        toList compInfo
       libSrcDirs =
         concatMap (\(_, _, _, srcDirs, _) -> srcDirs) .
         filter (\(_, _, _, _, compType) -> HCE.isLibrary compType) $
@@ -245,16 +242,16 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
     chModuleToString (ChModuleName n) = n
     chComponentNameToComponentType :: ChComponentName -> HCE.ComponentType
     chComponentNameToComponentType ChSetupHsName = HCE.Setup
-    chComponentNameToComponentType ChLibName = HCE.Lib
-    chComponentNameToComponentType (ChSubLibName name) =
+    chComponentNameToComponentType (ChLibName ChMainLibName) = HCE.Lib
+    chComponentNameToComponentType (ChLibName (ChSubLibName name)) =
       HCE.SubLib $ T.pack name
     chComponentNameToComponentType (ChFLibName name) = HCE.FLib $ T.pack name
     chComponentNameToComponentType (ChExeName name) = HCE.Exe $ T.pack name
     chComponentNameToComponentType (ChTestName name) = HCE.Test $ T.pack name
     chComponentNameToComponentType (ChBenchName name) = HCE.Bench $ T.pack name
     chComponentNameToComponentId :: ChComponentName -> HCE.ComponentId
-    chComponentNameToComponentId ChLibName = HCE.ComponentId "lib"
-    chComponentNameToComponentId (ChSubLibName name) =
+    chComponentNameToComponentId (ChLibName ChMainLibName) = HCE.ComponentId "lib"
+    chComponentNameToComponentId (ChLibName (ChSubLibName name)) =
       HCE.ComponentId . T.append "sublib-" . T.pack $ name
     chComponentNameToComponentId (ChFLibName name) =
       HCE.ComponentId . T.append "flib-" . T.pack $ name
@@ -266,59 +263,25 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
       HCE.ComponentId . T.append "bench-" . T.pack $ name
     chComponentNameToComponentId ChSetupHsName = HCE.ComponentId "setup"
 
--- | Parses the header of setup-config file.
--- The header is generated by Cabal:
--- https://github.com/haskell/cabal/blob/5be57c0d251be40a6263cd996d99703b8de1ed79/Cabal/Distribution/Simple/Configure.hs#L286-L295
-getPackageGhcVersion :: FilePath -> IO (Either String Version)
-getPackageGhcVersion distDir =
-  withFile (distDir </> "setup-config") ReadMode $ \handle -> do
-    header <- BSC.hGetLine handle
-    let parseHeader :: BSC.ByteString -> Maybe BSC.ByteString
-        parseHeader hdr =
-          case BSC.words hdr of
-            ["Saved", "package", "config", "for", _package, "written", "by", _cabal, "using", compiler] ->
-              Just compiler
-            _ -> Nothing
-        parseCompiler :: BSC.ByteString -> Maybe BSC.ByteString
-        parseCompiler compiler =
-          case BSC.split '-' compiler of
-            ["ghc", version] -> Just version
-            _ -> Nothing
-        parseGhcVersion :: BSC.ByteString -> Maybe Version
-        parseGhcVersion version =
-          case filter ((== "") . snd) $
-               readP_to_S parseVersion $ BSC.unpack version of
-            [(ver, "")] -> Just ver
-            _ -> Nothing
-    case parseHeader header >>= parseCompiler >>= parseGhcVersion of
-      Just version -> return $ Right version
-      _ ->
-        return $
-        Left $
-        "Unexpected setup-config header: \"" ++
-        BSC.unpack header ++
-        "\"\nIt may mean that the version of Cabal used to build this package is not supported by haskell-code-indexer yet."
-
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,4,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 4, 0], versionTags = []}
-#elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)     
+ghcVersion = makeVersion [8, 6, 4, 0]
+#elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 3, 0], versionTags = []}    
-#elif MIN_VERSION_GLASGOW_HASKELL(8,4,4,0) 
+ghcVersion = makeVersion [8, 6, 3, 0]
+#elif MIN_VERSION_GLASGOW_HASKELL(8,4,4,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 4, 4, 0], versionTags = []}
+ghcVersion = makeVersion [8, 4, 4, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 4, 3, 0], versionTags = []}
+ghcVersion = makeVersion [8, 4, 3, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 2, 2, 0], versionTags = []}
+ghcVersion = makeVersion [8, 2, 2, 0]
 #else
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 0, 2, 0], versionTags = []}
-#endif  
-      
+ghcVersion = makeVersion [8, 0, 2, 0]
+#endif
 buildDirectoryTree :: FilePath -> [FilePath] -> (FilePath -> Bool) -> IO HCE.DirTree
 buildDirectoryTree path ignoreDirectories isHaskellModule = do
   (_dir DT.:/ tree) <- DT.readDirectoryWith (const . return $ ()) path
