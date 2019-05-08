@@ -264,7 +264,12 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
       HCE.ComponentId . T.append "bench-" . T.pack $ name
     chComponentNameToComponentId ChSetupHsName = HCE.ComponentId "setup"
 
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,4,0)
+
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0)
+ghcVersion :: Version
+ghcVersion = Version {versionBranch = [8, 6, 5, 0], versionTags = []}
+#elif MIN_VERSION_GLASGOW_HASKELL(8,6,4,0)
 ghcVersion :: Version
 ghcVersion = Version {versionBranch = [8, 6, 4, 0], versionTags = []}
 #elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)     
