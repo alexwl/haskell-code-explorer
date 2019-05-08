@@ -27,7 +27,7 @@ defaults: &defaults
         command: stack --stack-yaml=${STACK_FILE} test || stack --stack-yaml=${STACK_FILE} exec --no-ghc-package-path $(stack --stack-yaml=${STACK_FILE} path --dist-dir)/build/test/test
     - save_cache:
         name: Cache Dependencies
-        key: haskell-code-explorer-{{ checksum "stack-build.txt" }}
+        key: haskell-code-explorer-v1-{{ checksum "stack-build.txt" }}
         paths:
           - "/root/.stack"
           - "/root/.cache"
