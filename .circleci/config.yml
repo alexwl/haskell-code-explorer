@@ -9,7 +9,7 @@ defaults: &defaults
     - restore_cache:
         name: Restore Cached Dependencies
         keys:
-          - haskell-code-explorer-{{ checksum "stack-build.txt" }}
+          - haskell-code-explorer-v1-{{ checksum "stack-build.txt" }}
     - run:
         name: Resolve/Update Dependencies
         command: stack --stack-yaml=${STACK_FILE} setup
