@@ -19,7 +19,7 @@ import qualified Data.Serialize as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time (getZonedTime)
-import Data.Version (Version(..),showVersion)
+import Data.Version (showVersion)
 import HaskellCodeExplorer.PackageInfo (createPackageInfo, ghcVersion)
 import qualified HaskellCodeExplorer.Types as HCE
 import Network.URI.Encode (encode)

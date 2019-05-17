@@ -18,7 +18,10 @@ import GHC
   ( AmbiguousFieldOcc(..)
   , ConDecl(..)
   , ConDeclField(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+#else
   , DataFamInstDecl(..)
+#endif  
   , FamilyDecl(..)
   , FieldOcc(..)
   , FixitySig(..)
@@ -26,7 +29,11 @@ import GHC
   , GenLocated(..)
   , HsBindLR(..)
   , HsExpr(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,1,0)
+  , HsPatSynDetails
+#else
   , HsPatSynDetails(..)
+#endif  
   , HsRecField'(..)
   , HsTupleSort(..)
   , HsTyLit(..)
@@ -36,7 +43,10 @@ import GHC
   , IE(..)
   , LHsBindLR
   , LHsExpr
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
+#else
   , LHsQTyVars(..)
+#endif
   , LHsType
   , LPat
   , LSig

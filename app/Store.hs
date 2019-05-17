@@ -23,7 +23,15 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Short as BSS
 import Data.Either (Either)
 import qualified Data.Map.Strict as M
-import Data.Serialize (Serialize, decode, encode, get, put)
+import Data.Serialize (
+  Serialize,
+  decode,
+  encode,
+#if MIN_VERSION_cereal(0,5,8)
+#else
+  get, put
+#endif  
+  )
 import GHC.Generics (Generic)
 import Prelude hiding (lookup)
 import System.Directory (doesFileExist)

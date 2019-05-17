@@ -18,7 +18,7 @@ import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Vector as V
-import Data.Version
+import Data.Version (makeVersion)
 import HaskellCodeExplorer.AST.TypecheckedSource (removeOverlappingInterval)
 import HaskellCodeExplorer.PackageInfo
 import HaskellCodeExplorer.Preprocessor
@@ -53,7 +53,7 @@ packageInfoSpec currentDir = do
       describe "createPackageInfo" $ do
         it "returns valid package id" $
           HCE.id (packageInfo :: PackageInfo ModuleInfo) `shouldBe`
-          PackageId "test-package" (Version [0, 1, 0, 0] [])
+          PackageId "test-package" (makeVersion [0, 1, 0, 0])
         it "returns valid list of module paths" $ do
           let paths =
                 HM.fromList
@@ -142,7 +142,7 @@ moduleInfoSpec modInfo =
           removeLocationInfo _ = HCE.UnknownLocation ""
           removePackageVersionFromExternalId :: HCE.ExternalId -> HCE.ExternalId
           removePackageVersionFromExternalId extId@(HCE.ExternalId textId) = case T.splitOn "|" textId of
-            packageId:rest -> case T.splitOn "-" packageId of
+            pId:rest -> case T.splitOn "-" pId of
               packageIdParts@(_:_) -> HCE.ExternalId $ T.intercalate "|" ((T.intercalate "-" (init packageIdParts)) : rest)
               _ -> extId
             _ ->  extId
@@ -461,11 +461,7 @@ testIdOccMap =
                        { packageId =
                            PackageId
                              { name = "test-package"
-                             , version =
-                                 Version
-                                   { versionBranch = [0, 1, 0, 0]
-                                   , versionTags = []
-                                   }
+                             , version = makeVersion [0, 1, 0, 0]
                              }
                        , modulePath =
                            HaskellModulePath
@@ -682,9 +678,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "test-package"
-                      , version =
-                          Version
-                            {versionBranch = [0, 1, 0, 0], versionTags = []}
+                      , version = makeVersion [0, 1, 0, 0]
                       }
                 , modulePath =
                     HaskellModulePath {getHaskellModulePath = "src/Lib.hs"}
@@ -729,9 +723,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "ghc-prim"
-                      , version =
-                          Version
-                            {versionBranch = [0, 5, 1, 1], versionTags = []}
+                      , version = makeVersion [0, 5, 1, 1]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "GHC.Prim"}
@@ -771,9 +763,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "ghc-prim"
-                      , version =
-                          Version
-                            {versionBranch = [0, 5, 1, 1], versionTags = []}
+                      , version = makeVersion [0, 5, 1, 1]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "GHC.Types"}
@@ -804,9 +794,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "test-package"
-                      , version =
-                          Version
-                            {versionBranch = [0, 1, 0, 0], versionTags = []}
+                      , version = makeVersion [0, 1, 0, 0]
                       }
                 , modulePath =
                     HaskellModulePath {getHaskellModulePath = "src/Types.hs"}
@@ -852,9 +840,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "ghc-prim"
-                      , version =
-                          Version
-                            {versionBranch = [0, 5, 1, 1], versionTags = []}
+                      , version = makeVersion [0, 5, 1, 1]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "GHC.Types"}
@@ -885,9 +871,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "test-package"
-                      , version =
-                          Version
-                            {versionBranch = [0, 1, 0, 0], versionTags = []}
+                      , version = makeVersion [0, 1, 0, 0]
                       }
                 , modulePath =
                     HaskellModulePath {getHaskellModulePath = "src/Types.hs"}
@@ -920,9 +904,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "ghc-prim"
-                      , version =
-                          Version
-                            {versionBranch = [0, 5, 1, 1], versionTags = []}
+                      , version = makeVersion [0, 5, 1, 1]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "GHC.Types"}
@@ -961,9 +943,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "ghc-prim"
-                      , version =
-                          Version
-                            {versionBranch = [0, 5, 1, 1], versionTags = []}
+                      , version = makeVersion [0, 5, 1, 1]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "GHC.Tuple"}
@@ -994,9 +974,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "base"
-                      , version =
-                          Version
-                            {versionBranch = [4, 10, 1, 0], versionTags = []}
+                      , version = makeVersion [4, 10, 1, 0]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "GHC.Base"}
@@ -1027,9 +1005,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "test-package"
-                      , version =
-                          Version
-                            {versionBranch = [0, 1, 0, 0], versionTags = []}
+                      , version = makeVersion [0, 1, 0, 0]
                       }
                 , modulePath =
                     HaskellModulePath {getHaskellModulePath = "src/Lib.hs"}
@@ -1070,9 +1046,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "base"
-                      , version =
-                          Version
-                            {versionBranch = [4, 10, 1, 0], versionTags = []}
+                      , version = makeVersion [4, 10, 1, 0]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "System.IO"}
@@ -1130,9 +1104,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "ghc-prim"
-                      , version =
-                          Version
-                            {versionBranch = [0, 5, 1, 1], versionTags = []}
+                      , version = makeVersion [0, 5, 1, 1]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "GHC.Types"}
@@ -1163,9 +1135,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "ghc-prim"
-                      , version =
-                          Version
-                            {versionBranch = [0, 5, 1, 1], versionTags = []}
+                      , version = makeVersion [0, 5, 1, 1]
                       }
                 , moduleName =
                     HaskellModuleName {getHaskellModuleName = "GHC.Types"}
@@ -1196,9 +1166,7 @@ testIdInfoMap =
                 { packageId =
                     PackageId
                       { name = "test-package"
-                      , version =
-                          Version
-                            {versionBranch = [0, 1, 0, 0], versionTags = []}
+                      , version = makeVersion [0, 1, 0, 0]
                       }
                 , modulePath =
                     HaskellModulePath {getHaskellModulePath = "src/Lib.hs"}

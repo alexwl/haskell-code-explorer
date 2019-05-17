@@ -74,16 +74,17 @@ import DataCon (dataConWorkId, flSelector)
 import Documentation.Haddock.Parser (overIdentifier, parseParas)
 import Documentation.Haddock.Types (DocH(..),
                                     Header(..),
-                                    _doc,
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
-                                    Table(..)
-#endif
+                                    _doc
  )
 import DynFlags ()
 import FastString (mkFastString, unpackFS)
 import GHC
   ( DynFlags
-  , HsDocString(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)        
+  , HsDocString
+#else
+  , HsDocString (..)
+#endif
   , InstDecl(..)
   , ModuleName
   , Name
@@ -97,7 +98,11 @@ import GHC
   , HsGroup(..)  
   , HsBindLR(..)  
   , HsValBindsLR(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,1,0)
+  , HsPatSynDetails
+#else
   , HsPatSynDetails(..)
+#endif
   , Located
   , IE(..)  
   , TyThing(..)
@@ -687,12 +692,12 @@ nameLocationInfo flags currentPackageId compId transformation fileMap defSiteMap
                  Nothing -> approximateLocation
   where
     realSrcSpan :: Name -> Maybe SrcSpan -> Maybe RealSrcSpan
-    realSrcSpan name mbSrcSpan =
-      case nameSrcSpan name of
+    realSrcSpan n mbSpan =
+      case nameSrcSpan n of
         RealSrcSpan span -> Just span
         _
-          | isWiredInName name ->
-            case mbSrcSpan of
+          | isWiredInName n ->
+            case mbSpan of
               Just span ->
                 case span of
                   RealSrcSpan s -> Just s
@@ -1082,9 +1087,9 @@ ungroup group_ =
 #endif
     typesigs _ = []
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)        
-    valbinds (XValBindsLR (NValBinds binds _)) = concatMap bagToList . snd . unzip $ binds
+    valbinds (XValBindsLR (NValBinds binds _)) = concatMap (bagToList . snd) binds
 #else
-    valbinds (ValBindsOut binds _) = concatMap bagToList . snd . unzip $ binds
+    valbinds (ValBindsOut binds _) = concatMap (bagToList . snd) binds
 #endif
     valbinds _ = []
 

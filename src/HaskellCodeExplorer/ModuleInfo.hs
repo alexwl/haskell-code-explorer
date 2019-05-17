@@ -63,20 +63,24 @@ import HaskellCodeExplorer.AST.TypecheckedSource
 import HaskellCodeExplorer.GhcUtils
 import HaskellCodeExplorer.Preprocessor (createSourceCodeTransformation)
 import qualified HaskellCodeExplorer.Types as HCE
-import HsBinds(HsBindLR)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+import HsBinds (HsBindLR)
+#endif
 import HsDecls
   ( ForeignDecl(..)
   , HsDecl(..)
   , HsGroup(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
   , InstDecl
-  , InstDecl(..)
   , TyClDecl
+#endif
+  , InstDecl(..)  
   , group_tyclds
   , tyClDeclLName
   , tcdName
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
   , hsGroupInstDecls
-#endif
+#endif    
   )
 import HsDoc(HsDocString)
 import HsImpExp (IE(..), ImportDecl(..))
@@ -503,7 +507,7 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
           Nothing -> Nothing
       -- | Top-level functions
       --------------------------------------------------------------------------------
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)      
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0) 
       valToDeclarations :: GenLocated SrcSpan (HsBindLR GhcRn GhcRn) -> [HCE.Declaration]
 #endif                           
       valToDeclarations (L loc bind) =

@@ -53,8 +53,6 @@ import Data.Maybe (fromMaybe, mapMaybe)
 import qualified Data.Vector as V
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 import qualified GHC.Compact as C
-#else
-import Data.Functor.Identity(Identity(..))
 #endif
 import Data.Pagination
   ( Paginated
@@ -139,7 +137,11 @@ import Servant
   )
 import Servant.API.ContentTypes (AllCTRender(..), JSON)
 import Servant.Server (Handler(..), hoistServer)
+#if MIN_VERSION_servant(0,14,1)
+import Servant.Links (safeLink)
+#else
 import Servant.Utils.Links (safeLink)
+#endif
 import System.Directory (doesFileExist)
 import System.Exit (exitFailure, exitSuccess)
 import System.FilePath.Find
@@ -751,7 +753,7 @@ loadPackages _config mbStore
          eitherGlobalReferenceMap <*>
          eitherGlobalIdentifierMap of
       Right res -> return $ Just res
-      Left _ -> do        
+      Left _ -> do
         putStrLn "Store lookup errors : "
         let ignoreRight :: Either a b -> Either a ()
             ignoreRight = second (const ())
@@ -833,7 +835,7 @@ loadPackages config _ = do
                        filter isExportedId $
                        trieValues $ HCE.externalIdInfoMap packageInfo
                   in L.foldl
-                       (\trie' exportedId@(HCE.ExternalIdentifierInfo (HCE.IdentifierInfo {HCE.demangledOccName = name})) ->
+                       (\trie' exportedId@(HCE.ExternalIdentifierInfo HCE.IdentifierInfo {HCE.demangledOccName = name}) ->
                           HCE.insertToTrie
                             S.insert
                             (T.unpack name)

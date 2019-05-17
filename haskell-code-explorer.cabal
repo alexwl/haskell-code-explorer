@@ -53,6 +53,7 @@ library
 executable haskell-code-indexer
   main-is:             Indexer.hs
   ghc-options:        -Wall -rtsopts -O2 -funbox-strict-fields
+  other-modules: Paths_haskell_code_explorer
   hs-source-dirs: app
   build-depends:     IntervalMap
                    , aeson                   

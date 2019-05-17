@@ -22,7 +22,7 @@ import Control.Exception
   , throw
   , try
   )
-import Control.Monad (foldM, join, unless)
+import Control.Monad (foldM, unless)
 import Control.Monad.Extra (anyM, findM)
 import Control.Monad.Logger
   ( LoggingT(..)
@@ -41,7 +41,7 @@ import Data.Maybe (fromMaybe, isJust, maybeToList)
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Data.Version (Version(..), showVersion)
+import Data.Version (Version(..), showVersion, makeVersion)
 import Digraph (flattenSCCs)
 import Distribution.Helper
   ( ChComponentName(..)
@@ -118,7 +118,7 @@ import System.FilePath
   , takeDirectory
   , splitDirectories  
   )
-import System.FilePath.Find
+import System.FilePath.Find (find,always,(==?),fileName)
 import System.Process (readProcess)
 
 createPackageInfo ::
@@ -268,26 +268,26 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 5, 0], versionTags = []}
+ghcVersion = makeVersion [8, 6, 5, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,6,4,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 4, 0], versionTags = []}
+ghcVersion = makeVersion [8, 6, 4, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)     
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 6, 3, 0], versionTags = []}    
+ghcVersion = makeVersion [8, 6, 3, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,4,4,0) 
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 4, 4, 0], versionTags = []}
+ghcVersion = makeVersion [8, 4, 4, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 4, 3, 0], versionTags = []}
+ghcVersion = makeVersion [8, 4, 3, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 2, 2, 0], versionTags = []}
+ghcVersion = makeVersion [8, 2, 2, 0]
 #else
 ghcVersion :: Version
-ghcVersion = Version {versionBranch = [8, 0, 2, 0], versionTags = []}
-#endif  
+ghcVersion = makeVersion [8, 0, 2, 0]
+#endif
       
 buildDirectoryTree :: FilePath -> [FilePath] -> (FilePath -> Bool) -> IO HCE.DirTree
 buildDirectoryTree path ignoreDirectories isHaskellModule = do
@@ -340,8 +340,7 @@ addReferencesFromModule references modInfo@HCE.ModuleInfo {..} =
     modInfo
     (\occMap lineNumber startCol endCol occ ->
        let mbIdExternalId =
-             join $
-             HCE.externalId <$>
+             HCE.externalId =<<
              maybe
                Nothing
                (`HM.lookup` idInfoMap)
@@ -480,7 +479,7 @@ indexBuildComponent sourceCodePreprocessing currentPackageId componentId deps@(f
       logDebugN (T.append "Modules : " $ T.pack $ show modules)
       logDebugN
         (T.append "GHC command line options : " $
-         T.pack $ L.intercalate " " (options ++ modules))
+         T.pack $ L.unwords (options ++ modules))
       flags <- getSessionDynFlags
       (flags', _, _) <-
         parseDynamicFlagsCmdLine

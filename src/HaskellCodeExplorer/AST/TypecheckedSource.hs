@@ -20,7 +20,11 @@ module HaskellCodeExplorer.AST.TypecheckedSource
 import Bag (bagToList)
 import BasicTypes (Origin(..))
 import Class (Class, classTyVars)
-import ConLike (ConLike(..),conLikeWrapId_maybe)
+import ConLike (ConLike(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
+  , conLikeWrapId_maybe
+#endif
+  )
 import Control.Monad (return, unless, void)
 import Control.Monad.State.Strict (State, get, modify')
 import qualified Data.HashMap.Strict as HM
@@ -35,7 +39,12 @@ import DynFlags (DynFlags)
 import FastString (mkFastString)
 import HaskellCodeExplorer.GhcUtils
 import qualified HaskellCodeExplorer.Types as HCE
-import HsBinds (HsPatSynDetails(..), RecordPatSynField(..))
+import HsBinds (RecordPatSynField(..)
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
+#else
+  , HsPatSynDetails (..)
+#endif
+  )
 import HsSyn
   ( ABExport(..)
   , ApplicativeArg(..)
@@ -175,7 +184,7 @@ data Environment = Environment
 
 -- | Indicates whether an expression consists of more than one token.
 -- Simple expression : wildcard, literal
--- Composite expressin : applcation, lambda abstraction,...
+-- Composite expression : application, lambda abstraction,...
 data ExprSort
   = Simple
   | Composite
