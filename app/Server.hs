@@ -218,7 +218,7 @@ configParser =
   (not <$>
    switch
      (long "no-expressions" <>
-      help "Disable queries that return expressions inside selected span")) <*>
+      help "Disable queries that return expressions inside selected span (reduces memory usage)")) <*>
   optional
     (strOption
        (long "index-directory" <>
@@ -237,7 +237,7 @@ configParser =
       help "URL prefix for static files (default is 'files')")) <*>
   optional
     (strOption
-       (long "js-path" <> help "Path to a directory with javascript files" <>
+       (long "js-path" <> help "Path to a directory with javascript files (by default, the server uses javascript files that are embedded in the executable)" <>
         metavar "PATH")) <*>
   (pure 50 <|>
    option
@@ -248,7 +248,7 @@ configParser =
     (CreateStore <$>
      strOption
        (long "create-store" <>
-        help "Create a key-value store from PackageInfo of each indexed package" <>
+        help "Create a key-value store from PackageInfo of each indexed package. The key-value store allows to significantly reduce memory usage of the server (3x times for a real-world set of Haskell packages)." <>
         metavar "PATH_TO_DATA_DIRECTORY") <|>
      (UseStore <$>
       strOption
@@ -258,7 +258,7 @@ configParser =
      (UseStoreMmap <$>
       strOption
         (long "use-store-mmap" <>
-         help "Use existing key-value store. mmap 'values' file." <>
+         help "Use existing key-value store. Memory map 'values' file (the server uses less memory but may be slower to respond to requests)." <>
          metavar "PATH_TO_DATA_DIRECTORY"))) <*>
   switch
     (long "use-hoogle-api" <>
