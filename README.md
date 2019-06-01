@@ -94,19 +94,27 @@ stack --stack-yaml=stack-8.0.2.yaml install
 
 ## Indexing source code of a Cabal package
 
-`haskell-code-indexer` executable is responsible for indexing packages (by default, index is saved to `.haskell-code-explorer` directory).
+`haskell-code-indexer` executable is responsible for indexing packages (by default, the index is saved to `.haskell-code-explorer` directory).
 
 A package should be built using either cabal-install or stack before indexing (`cabal new-build`,`cabal build`, or `stack build` command should be executed).
 
 The version of GHC used to build `haskell-code-indexer` must match the version of GHC used to build a package you are indexing (to find out the version of GHC try `ghc --version` or `stack exec ghc -- --version` command).
 
-`haskell-code-indexer` requires globally installed GHC and cabal-install (`cabal`). The reason for this is that `haskell-code-indexer` uses `cabal-helper` library [https://hackage.haskell.org/package/cabal-helper](https://hackage.haskell.org/package/cabal-helper) to get package build information. `cabal-helper` builds (at runtime) an executable linked against a version of Cabal library that was used to configure the package.
+`haskell-code-indexer` requires globally installed GHC and cabal-install (`cabal`). The reason for this is that `haskell-code-indexer` uses `cabal-helper` library [https://hackage.haskell.org/package/cabal-helper](https://hackage.haskell.org/package/cabal-helper) to get package build information. `cabal-helper` builds (at runtime) an executable linked against a version of Cabal library that was used to configure the package. You may need to run `cabal update` to get the latest list of available packages to be able to build the `cabal-helper` executable. By default, the `cabal-helper` executable (e.g.,`cabal-helper0.8.1.2-Cabal2.4.1.0`) is saved to `$HOME/.cache/cabal-helper`.
 
-If there is no globally installed GHC on the system, then it is possible to use `stack exec` command ([https://docs.haskellstack.org/en/stable/GUIDE/#exec](https://docs.haskellstack.org/en/stable/GUIDE/#exec)) that adds a path to GHC binaries installed by Stack to `PATH` environment variable:
+If there is no globally installed GHC on the system, then it is possible to use `stack exec` command ([https://docs.haskellstack.org/en/stable/GUIDE/#exec](https://docs.haskellstack.org/en/stable/GUIDE/#exec)) that adds a path to GHC binaries installed by Stack to `PATH` environment variable.
 
+Run `cabal update` using stack exec:
 ```bash
-stack --resolver=lts-13.0 exec --no-ghc-package-path haskell-code-indexer -- INDEXER_OPTIONS
+stack --resolver=lts-13.20 exec --no-ghc-package-path cabal -- update
 ```
+
+Index a package using stack exec:
+```bash
+stack --resolver=lts-13.20 exec --no-ghc-package-path haskell-code-indexer -- INDEXER_OPTIONS
+```
+
+`--no-ghc-package-path` option unsets `GHC_PACKAGE_PATH` environment variable. `cabal` fails with the error `Use of GHC's environment variable GHC_PACKAGE_PATH is incompatible with Cabal.` if the `GHC_PACKAGE_PATH` is set.
 
 ### Examples
 
