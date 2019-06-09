@@ -1264,12 +1264,27 @@ initializePagination mbPage mbPerPage = do
           Nothing -> maxPerPage
   return (fromIntegral page, fromIntegral perPage)
 
+addPaginationHeaders ::
+     forall a b.
+     T.Text
+  -> Paginated a
+  -> Int
+  -> Natural
+  -> Natural
+  -> b
+  -> Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] b
+addPaginationHeaders url items totalCount page perPage =
+  addHeader linkHeader . addHeader totalCount
+  where
+    linkHeader :: T.Text
+    linkHeader = buildLinkHeader url items page perPage
+
 getGlobalReferences ::
      HCE.ExternalId -> ReaderT Environment IO [GlobalReferences]
 getGlobalReferences externalId = do
   refMap <- asks envGlobalReferenceMap
-  return $ maybe [] S.toDescList (HM.lookup externalId refMap)  
-
+  return $ maybe [] S.toDescList (HM.lookup externalId refMap)    
+  
 getReferences ::
      PackageId
   -> HCE.ExternalId
@@ -1296,19 +1311,12 @@ getReferences packageId externalId mbPage mbPerPage =
                       externalId
                       Nothing
                       Nothing
-                  linkHeader =
-                    buildLinkHeader url paginatedReferences page perPage
-                  addHeaders ::
-                       forall a.
-                       a
-                    -> Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] a
-                  addHeaders = addHeader linkHeader . addHeader totalCount
                   refModulePath :: ReferenceWithSource -> HCE.HaskellModulePath
                   refModulePath =
                     (HCE.modulePath :: HCE.IdentifierSrcSpan -> HCE.HaskellModulePath) .
                     idSrcSpan
               return $
-                addHeaders $
+                addPaginationHeaders url paginatedReferences totalCount page perPage $
                 concatMap
                   (\refs ->
                      case refs of
@@ -1413,7 +1421,7 @@ findIdentifiers ::
   -> Maybe Int
   -> Maybe Int
   -> ReaderT Environment IO (Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] [HCE.ExternalIdentifierInfo])
-findIdentifiers packageId query' mbPage mbPerPage =  
+findIdentifiers packageId query' mbPage mbPerPage =
   withPackageInfo packageId $ \packageInfo' ->
     let query = fixDots query'
         respond identifiers = do
@@ -1429,13 +1437,15 @@ findIdentifiers packageId query' mbPage mbPerPage =
                   query'
                   Nothing
                   Nothing
-              linkHeader = buildLinkHeader url paginatedIdentifiers page perPage
-              addHeaders ::
-                   forall a.
-                   a
-                -> Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] a
-              addHeaders = addHeader linkHeader . addHeader totalCount
-          return . addHeaders . paginatedItems $ paginatedIdentifiers
+          return .
+            addPaginationHeaders
+              url
+              paginatedIdentifiers
+              totalCount
+              page
+              perPage .
+            paginatedItems $
+            paginatedIdentifiers
      in case packageInfo' of
           PackageInfo packageInfo -> do
             let identifiers
@@ -1502,13 +1512,10 @@ findGlobalIdentifiers query' mbPage mbPerPage = do
           query'
           Nothing
           Nothing
-      linkHeader = buildLinkHeader url paginatedIdentifiers page perPage
-      addHeaders ::
-           forall a.
-           a
-        -> Headers '[ Header "Link" T.Text, Header "X-Total-Count" Int] a
-      addHeaders = addHeader linkHeader . addHeader totalCount
-  return . addHeaders . paginatedItems $ paginatedIdentifiers
+  return .
+    addPaginationHeaders url paginatedIdentifiers totalCount page perPage .
+    paginatedItems $
+    paginatedIdentifiers
 
 data HoogleResultItem = HoogleResultItem
   { sort :: HoogleItemSort
