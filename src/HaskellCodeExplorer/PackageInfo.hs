@@ -153,16 +153,14 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
   let currentPackageId = HCE.PackageId (T.pack packageName) packageVersion
   unless
     (take 3 (versionBranch packageCompilerVersion) ==
-     take 3 (versionBranch ghcVersion)) $
-    logInfoN $
-    T.concat
-      [ "GHC version mismatch. haskell-code-indexer: "
-      , T.pack $ showVersion ghcVersion
-      , ", package: "
-      , T.pack $ showVersion packageCompilerVersion
-      , ". "
-      , "The indexing might fail."
-      ]
+     take 3 (versionBranch ghcVersion)) $ do
+       logErrorN $ T.concat
+         [ "GHC version mismatch. haskell-code-indexer: "
+         , T.pack $ showVersion ghcVersion
+         , ", package: "
+         , T.pack $ showVersion packageCompilerVersion         
+         ]
+       liftIO exitFailure
   logInfoN $ T.append "Indexing " $ HCE.packageIdToText currentPackageId
   let buildComponents =
         L.map
