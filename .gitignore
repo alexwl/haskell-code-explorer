@@ -10,3 +10,5 @@ tmp/
 TAGS
 \#*\#
 .\#*
+# stack 2.1 stack.yaml lock files
+stack*.yaml.lock
