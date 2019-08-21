@@ -1,4 +1,4 @@
-resolver: lts-13.20
+resolver: lts-14.1
 packages:
 - '.'
 - 'vendor/cabal-helper-0.8.1.2'
