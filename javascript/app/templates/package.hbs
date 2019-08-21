@@ -1,6 +1,6 @@
 <div class="flex-container">
     <div class="package-header">
-        <span class="package-header-package-name">{{#link-to 'package' model}}{{model.id}}{{/link-to}}</span> 
+        <span class="package-header-package-name">{{#link-to 'package' model}}{{model.id}}{{/link-to}}</span>
         <span class="package-header-input">
             {{#input-with-autocomplete
                onSubmit=(action 'searchIdentifier')
@@ -11,7 +11,7 @@
                placeholder="Identifier" as |identifier|}}
                 <span class="source-code-font">{{identifier.demangledOccName}} :: {{type-signature-text components=identifier.idType.components}}</span>
                 <div class="module-name">
-                    <b>{{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}}</b>                    
+                    <b>{{identifier.locationInfo.packageId.name}}-{{identifier.locationInfo.packageId.version}}</b>
                     {{#if identifier.locationInfo.modulePath}}
                         {{identifier.locationInfo.modulePath}}
                     {{else}}
@@ -29,7 +29,7 @@
            value="allPackages"
            groupValue=searchMode}}
             <span>in all packages</span>
-        {{/radio-button}}        
+        {{/radio-button}}
         {{#if currentFile}}
             <span class="package-header-filename">
                 {{currentFile}}
@@ -66,7 +66,7 @@
                             </span>
                         {{/if}}
                     </div>
-                    <div class="references">                        
+                    <div class="references">
                         {{#paginated-list url=referencesUrl foundWhere=(concat "in <b>" packageId "</b>") as |files|}}
                             <ul>
                                 {{#each files as |file|}}

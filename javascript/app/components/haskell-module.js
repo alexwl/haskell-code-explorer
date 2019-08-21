@@ -19,17 +19,17 @@ function compareLocations (p1,p2) {
   }
 }
 
-function buildSrcSpan(sourceCodeLines,start,end) {  
+function buildSrcSpan(sourceCodeLines,start,end) {
   if(sourceCodeLines[start.line] && sourceCodeLines[end.line]) {
     if(start.line === end.line) {
       return sourceCodeLines[start.line].slice(start.column-1,end.column-1);
-    } else {    
+    } else {
       const firstLine = sourceCodeLines[start.line];
       let middleLines = [];
-      for(let i = start.line + 1; i < end.line;i ++) {      
+      for(let i = start.line + 1; i < end.line;i ++) {
         middleLines.push(sourceCodeLines[i]);
       }
-      const lastLine = sourceCodeLines[end.line];   
+      const lastLine = sourceCodeLines[end.line];
       const minOffset = Math.min(start.column,
                                  (middleLines.concat([lastLine]))
                                  .map((line) => line.search(/\S/))
@@ -52,7 +52,7 @@ function modifyClass(element,on) {
 }
 
 function highlightIdentifiers(parentElement,identifierElement,on) {
-  if(identifierElement.id) {    
+  if(identifierElement.id) {
     const identifiers = Array.prototype.slice.call(parentElement.querySelectorAll("span[id='"+identifierElement.id+"']"));
     identifiers.forEach((identifier) => {
       modifyClass(identifier,on);
@@ -63,7 +63,7 @@ function highlightIdentifiers(parentElement,identifierElement,on) {
 }
 
 //divident is a string
-//divident may have any number of digits 
+//divident may have any number of digits
 function modulo(divident, divisor) {
   return Array.from(divident).map(c => parseInt(c))
     .reduce((acc, value) => {
@@ -82,12 +82,12 @@ function identifierStyle(identifierElement,
                          occurrences,
                          path,
                          colorTheme,
-                         moduleName) {  
+                         moduleName) {
   const idOcc = occurrences[identifierElement.dataset.occurrence];
-  
+
   let color = colorTheme.defaultColor;
-  let fontWeight;  
-  
+  let fontWeight;
+
   if(idOcc) {
     if(idOcc.sort.tag === 'TypeId') {
       color = colorTheme.typeColor;
@@ -102,7 +102,7 @@ function identifierStyle(identifierElement,
       const idInfo = identifiers[identifierElement.dataset.identifier];
       if(idInfo) {
         if(isDefinedInCurrentModule(moduleName,path,idInfo)) {
-          color = colorTheme.topLevelIdFromCurrentModule;         
+          color = colorTheme.topLevelIdFromCurrentModule;
         } else if(idInfo.sort === "Internal" && idInfo.locationInfo.tag === "ExactLocation") {
           const colorNumber = modulo(identifierElement.id,colorTheme.localIdentifierColor.length);
           color = colorTheme.localIdentifierColor[colorNumber];
@@ -111,7 +111,7 @@ function identifierStyle(identifierElement,
       }
     }
   }
-  
+
   return "color:"+color+";"
     +(fontWeight ? "font-weight:" + fontWeight : "")+";"
     +(idOcc.isBinder ? "text-decoration:underline;" : "");
@@ -122,16 +122,16 @@ function initializeIdentifiers (sourceCodeContainerElement,component) {
   if(identifierElements.length > 0) {
     const timeout = 250;//milliseconds
     let timer = null;
-    
+
     identifierElements.forEach((identifierElement) => {
-      
+
       const cssText = identifierStyle(identifierElement,
                                       component.get('identifiers'),
-                                      component.get('occurrences'),                                     
+                                      component.get('occurrences'),
                                       component.get('path'),
                                       component.get('colorTheme'),
                                       component.get('name'));
-      
+
       identifierElement.style.cssText = cssText;
 
       //go to definition
@@ -139,31 +139,31 @@ function initializeIdentifiers (sourceCodeContainerElement,component) {
         if(timer) {
           clearTimeout(timer);
         }
-        
+
         if(!window.getSelection().isCollapsed) {
           return;
         }
 
-        const identifierInfo = component.get('identifiers')[identifierElement.dataset.identifier]; 
+        const identifierInfo = component.get('identifiers')[identifierElement.dataset.identifier];
         const idOccurrenceInfo = component.get('occurrences')[identifierElement.dataset.occurrence];
 
         const currentLineNumber = parseInt(identifierElement.parentNode.dataset.line);
-        
+
         if(idOccurrenceInfo.sort.tag === "ModuleId") {
           goToDefinition(component.get('store'),
                          idOccurrenceInfo.sort.contents,
                          event.which,
                          currentLineNumber);
         }
-        else {          
-          if(identifierInfo && (event.which === 1 || event.which === 2)) {            
+        else {
+          if(identifierInfo && (event.which === 1 || event.which === 2)) {
             if(!idOccurrenceInfo.isBinder) {
               goToDefinition(component.get('store'),
                              identifierInfo.locationInfo,
                              event.which,
                              currentLineNumber);
             } else {
-              if(identifierInfo.sort === "External") {                
+              if(identifierInfo.sort === "External") {
                 component.get('findReferences')(component.get('packageId'),
                                                 identifierInfo.externalId,
                                                 identifierInfo.demangledOccName,
@@ -173,7 +173,7 @@ function initializeIdentifiers (sourceCodeContainerElement,component) {
             }
           }
         }
-      }      
+      }
       identifierElement.onmouseover = () => {
         highlightIdentifiers(sourceCodeContainerElement,identifierElement,true);
         if(timer) {
@@ -185,27 +185,27 @@ function initializeIdentifiers (sourceCodeContainerElement,component) {
             const identifierOccurrence = component.get('occurrences')[identifierElement.dataset.occurrence];
             console.log(identifierOccurrence);
             console.log(identifierInfo);
-            
+
             component.set('selectedIdentifier',identifierElement);
             component.set('currentLineNumber',parseInt(identifierElement.parentNode.dataset.line) || 1);
             component.set('identifierInfo',identifierInfo);
             component.set('identifierOccurrence',identifierOccurrence);
             component.set('hasSelectedExpression',false);
             component.set('isHoveredOverIdentifier',true);
-            
+
           });
         },timeout);
       };
-      
+
       identifierElement.onmouseout = () => {
         highlightIdentifiers(sourceCodeContainerElement,identifierElement,false);
-        
+
         if(timer) {
           clearTimeout(timer);
         }
-                
+
         timer = setTimeout (() => {
-          Ember.run.next(component,() => {            
+          Ember.run.next(component,() => {
             component.set('isHoveredOverIdentifier',false);
           });
         },timeout);
@@ -224,19 +224,19 @@ function contains (node, other) {
 function initializeExpressionInfo(sourceCodeContainerElement,component) {
   const lineElements = Array.prototype.slice.call(sourceCodeContainerElement.querySelectorAll("td.line-content"));
   if(lineElements.length > 0) {
-    
+
     //Line numbers start with 1
     let sourceCodeLines = [""];
-    
+
     lineElements.forEach((el) => {
       sourceCodeLines.push(el.textContent);
     });
-    
-    const allowedNodeNames = ["#text","SPAN","TD"];    
+
+    const allowedNodeNames = ["#text","SPAN","TD"];
     let isLoading = false;
     let shouldWait = false;
     const timeout = 400;//milliseconds
-    
+
     const onmouseup = function()  {
       Ember.run.next(() => {
         if(isLoading || shouldWait) {
@@ -244,14 +244,14 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
         }
         shouldWait = true;
         setTimeout(() => {shouldWait = false;},timeout);
-        
+
         component.set('hasSelectedExpression',false);
-        
-        const selection = window.getSelection();        
-        
+
+        const selection = window.getSelection();
+
         //Selection of multiple lines inside a table doesn't work in Firefox
         //https://bugzilla.mozilla.org/show_bug.cgi?id=365900
-        
+
         if(!(selection.anchorNode && selection.focusNode)
            || !contains(sourceCodeContainerElement,selection.anchorNode)
            || !contains(sourceCodeContainerElement,selection.focusNode)
@@ -259,16 +259,16 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
            || (allowedNodeNames.indexOf(selection.focusNode.nodeName) === -1)
            || selection.isCollapsed) {
           return;
-        }        
-        
+        }
+
         // Detects whether the selection is backwards
         const detectionRange = document.createRange();
         detectionRange.setStart(selection.anchorNode, selection.anchorOffset);
         detectionRange.setEnd(selection.focusNode, selection.focusOffset);
         const isBackward = detectionRange.collapsed;
-        
+
         let startNode,startNodeOffset,endNode,endNodeOffset;
-        
+
         if(isBackward) {
           startNode = selection.focusNode;
           startNodeOffset = selection.focusOffset;
@@ -283,8 +283,8 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
 
         let lineStart,columnStart,lineEnd,columnEnd;
         let infoWindowTargetElement;
-        
-        
+
+
         //HTML inside source code container :
         //<tr><td><span data-start="1" date-end="3">abc</span><span>...</span></td></tr>
         //<tr>...</tr>
@@ -292,17 +292,17 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
           const parent = startNode.parentNode;//<span>
           columnStart = parseInt(parent.dataset.start) + startNodeOffset;
           lineStart = parseInt(parent.parentNode.dataset.line);
-          
+
           if(startNodeOffset === startNode.textContent.length && parent.nextSibling === null) {
             const tr = startNode.parentNode.parentNode.parentNode;// span -> td -> tr
-            
+
             //Skipping empty lines
-            let nextLine = tr.nextSibling;            
+            let nextLine = tr.nextSibling;
             while(nextLine.children[1].textContent === "") {
               nextLine = nextLine.nextSibling;
             }
             infoWindowTargetElement = nextLine.children[1].children[0];
-            
+
           } else {
             if(!(startNodeOffset === 0) && (parent.nextSibling)) {
               infoWindowTargetElement = parent.nextSibling;
@@ -320,7 +320,7 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
             nextLine = nextLine.nextSibling;
           }
           infoWindowTargetElement = nextLine.children[1].children[0];
-          
+
         } else if(startNode.nodeName === "TD") {
           if(startNodeOffset > 0) {
             const child = startNode.children[startNodeOffset-1];
@@ -330,10 +330,10 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
           }
           lineStart = parseInt(startNode.id.slice(2));
           infoWindowTargetElement = startNode.children[0];
-        } 
-        
+        }
+
         if(endNode.nodeName === "#text") {
-          columnEnd = parseInt(endNode.parentNode.dataset.start) + endNodeOffset;          
+          columnEnd = parseInt(endNode.parentNode.dataset.start) + endNodeOffset;
           lineEnd = parseInt(endNode.parentNode.parentNode.dataset.line);
         } else if(endNode.nodeName === "SPAN") {
           columnEnd = 1;
@@ -341,22 +341,22 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
         } else if(endNode.nodeName === "TD"){
           if(endNodeOffset > 0) {
             const child = endNode.children[endNodeOffset-1];
-            columnEnd = parseInt(child.dataset.start);            
+            columnEnd = parseInt(child.dataset.start);
           } else {
             columnEnd = 1;
           }
           lineEnd = parseInt(endNode.id.slice(2));
-        }        
-        
+        }
+
         const loadExprPromise = component.get('store').loadExpressions(
           component.get('packageId'),
-          component.get('path'),          
+          component.get('path'),
           lineStart,
           columnStart,
           lineEnd,
           columnEnd);
         isLoading = true;
-                
+
         loadExprPromise.then((expressions) => {
           Ember.run.next(() => {
             if(expressions && expressions.length > 0) {
@@ -368,7 +368,7 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
                   return 1;
                 }
               });
-              
+
               const expressionsWithSourceCode = expressions.reduce((result,expression) => {
                 const object = Ember.copy(expression);
                 const srcSpan = buildSrcSpan(sourceCodeLines,
@@ -387,15 +387,15 @@ function initializeExpressionInfo(sourceCodeContainerElement,component) {
                 component.set('expressions',expressionsWithSourceCode);
                 component.set('currentLineNumber',parseInt(infoWindowTargetElement.parentNode.dataset.line) || 1);
                 component.set('hasSelectedExpression',true);
-                
+
               }
             }
             isLoading = false;
           });
-        });        
+        });
       });
     };
-    
+
     sourceCodeContainerElement.addEventListener('mouseup',onmouseup);
     component._onmouseup = onmouseup;
   }
@@ -418,10 +418,10 @@ export default Ember.Component.extend({
         this.set('filteredDeclarations',filteredDeclarations);
       });
     }, 300);
-  }),  
+  }),
   identifierLocationInfo : Ember.computed('identifierInfo','identifierOccurrence',function() {
     const idOcc = this.get('identifierOccurrence');
-    const idInfo = this.get('identifierInfo');    
+    const idInfo = this.get('identifierInfo');
     if(idOcc) {
       if(idOcc.sort.tag === "ModuleId") {
         return idOcc.sort.contents;
@@ -470,10 +470,10 @@ export default Ember.Component.extend({
   didReceiveAttrs() {
     this.set('filteredDeclarations',this.get('declarations'));
   },
-  didInsertElement() {    
+  didInsertElement() {
     this._super(...arguments);
     const sourceCodeContainerElement = this.element.querySelector('.source-code-container');
-    sourceCodeContainerElement.innerHTML = this.get('html');    
+    sourceCodeContainerElement.innerHTML = this.get('html');
     this.sourceCodeContainerElement = sourceCodeContainerElement;
 
     // Add links to Haskell language extensions docs
@@ -493,7 +493,7 @@ export default Ember.Component.extend({
       }
       i = i + 1;
     }
-    
+
     this.element.parentNode.scrollTop = 0;
     const declarations = this.element.querySelector('.declarations-content');
     this.set('query','');
@@ -510,7 +510,7 @@ export default Ember.Component.extend({
     this.cleanup();
   },
   actions : {
-    goToLine(lineNumber) {   
+    goToLine(lineNumber) {
       window.location.hash = "L"+lineNumber;
     },
     toggleShowDeclarations() {

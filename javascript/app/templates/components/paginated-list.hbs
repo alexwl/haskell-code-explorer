@@ -1,4 +1,4 @@
-<div class="paginated-list-header">   
+<div class="paginated-list-header">
     <span>Found {{total}} {{{foundWhere}}}</span>
     {{#if (or next prev)}}
         &nbsp;
@@ -10,8 +10,8 @@
             {{#if next}}<button button class="btn btn-outline-secondary btn-sm" {{action "update" next.href}}>&gt;</button>{{/if}}
             {{#if last}}<button button class="btn btn-outline-secondary btn-sm" {{action "update" last.href}}>&gt;&gt;</button>{{/if}}
         </span>
-    {{/if}}    
+    {{/if}}
 </div>
 <div class="paginated-list-content">
-    {{yield items}}    
+    {{yield items}}
 </div>

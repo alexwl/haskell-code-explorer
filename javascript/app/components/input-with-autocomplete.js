@@ -1,14 +1,14 @@
 import Ember from 'ember';
 export default Ember.Component.extend({
-  store : Ember.inject.service('store'),  
+  store : Ember.inject.service('store'),
   highlightedItemIndex: -1,
   items : [],
   query: null,
   didInsertElement() {
     const $input = Ember.$(this.element).find(".search-input");
-    const $autocompleteContainer = Ember.$(this.element).find(".autocomplete-container");    
-    this.$input = $input;        
-    this.$autocompleteContainer = $autocompleteContainer;    
+    const $autocompleteContainer = Ember.$(this.element).find(".autocomplete-container");
+    this.$input = $input;
+    this.$autocompleteContainer = $autocompleteContainer;
     const width = $input.width() + 300;
     $autocompleteContainer.css({
       "width" : width+"px",
@@ -23,9 +23,9 @@ export default Ember.Component.extend({
         this.onDown();
       } else if(e.which === 38) {
         this.onUp();
-      } 
+      }
     });
-    $input.focusin(() => {      
+    $input.focusin(() => {
       this.showAutocompleteList();
     });
     $input.focusout(() => {
@@ -105,7 +105,7 @@ export default Ember.Component.extend({
   },
   searchUrlObserver : Ember.observer('createSearchUrlFunction',function() {
     this.notifyPropertyChange('query');
-  }),  
+  }),
   queryObserver : Ember.observer("query",function() {
     if(this.get('query')) {
       const perPage = this.get('maxItems') ? this.get('maxItems') : 10;

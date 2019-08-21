@@ -37,7 +37,7 @@ export default Ember.Component.extend({
   }),
   init() {
     this._super(...arguments);
-    this.markdownConverter = new showdown.Converter();    
+    this.markdownConverter = new showdown.Converter();
   },
   didInsertElement() {
     const sourceCodeContainerElement = this.element.querySelector('.source-code-container');
@@ -48,7 +48,7 @@ export default Ember.Component.extend({
     this.cleanup();
   },
   cleanup() {
-    if(this._onhashchange) {      
+    if(this._onhashchange) {
       window.removeEventListener('hashchange',this._onhashchange);
     }
     if(this._onkeydown) {
@@ -61,7 +61,7 @@ export default Ember.Component.extend({
   pathObserver : Ember.observer('path',function() {
     Ember.run.next(this,() => {
       this.cleanup();
-      this.didInsertElement();      
+      this.didInsertElement();
     });
   })
 });

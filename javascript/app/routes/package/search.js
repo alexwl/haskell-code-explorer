@@ -10,7 +10,7 @@ export default Ember.Route.extend({
       url: urls.identifierSearchUrl(this.modelFor('package').id,params.query)+"?per_page=20"
     };
   },
-  afterModel () {    
+  afterModel () {
     const onmouseup = (event) => {
       // This makes links in documentation clickable
       if(event.target.dataset.location) {
@@ -26,7 +26,7 @@ export default Ember.Route.extend({
       }
     };
     this._onmouseup = onmouseup;
-    document.addEventListener('mouseup',onmouseup);    
+    document.addEventListener('mouseup',onmouseup);
   },
   deactivate() {
     if(this._onmouseup) {

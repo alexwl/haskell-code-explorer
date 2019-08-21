@@ -11,7 +11,7 @@ export default Ember.Component.extend({
   }),
   style : Ember.computed('identifierElement',function() {
     const element = this.get('identifierElement');
-    if(element) {      
+    if(element) {
       return new Ember.String.htmlSafe("color:"+element.style.color);
     }
   }),
@@ -44,7 +44,7 @@ export default Ember.Component.extend({
     return (this.get('identifierInfo.sort') === "External");
   }),
   actions : {
-    goToDefinition (event) {      
+    goToDefinition (event) {
       goToDefinition(this.get('store'),
                      this.get('locationInfo'),
                      event.which,

@@ -346,7 +346,7 @@ instance Store.StoreItem [HCE.ExternalIdentifierInfo] where
       , TE.encodeUtf8 $ HCE.packageIdToText packageId
       , "|"
       , BSC.pack prefix
-      ] 
+      ]
 
 instance Store.StoreItem (S.Set HCE.IdentifierSrcSpan) where
   toByteString = Serialize.encode
@@ -377,7 +377,7 @@ instance (Serialize.Serialize modInfo) =>
   toByteString = Serialize.encode
   fromByteString = Serialize.decode
   type KeyArgs (HM.HashMap HCE.HaskellModulePath modInfo) =
-    (HCE.PackageId,Proxy (HM.HashMap HCE.HaskellModulePath modInfo))    
+    (HCE.PackageId,Proxy (HM.HashMap HCE.HaskellModulePath modInfo))
   itemKey (packageId, _) =
     BSS.toShort $ BS.append "moduleMap|" $ TE.encodeUtf8 $ HCE.packageIdToText packageId
 
@@ -386,7 +386,7 @@ instance Store.StoreItem HCE.ExpressionInfoMap where
   fromByteString = Serialize.decode
   type KeyArgs HCE.ExpressionInfoMap = ( HCE.PackageId
                                        , HCE.HaskellModulePath
-                                       , BS.ByteString  
+                                       , BS.ByteString
                                        , Proxy HCE.ExpressionInfoMap)
   itemKey (packageId, HCE.HaskellModulePath modulePath, topLevelExprKey, _) =
     BSS.toShort $ BS.concat
@@ -396,7 +396,7 @@ instance Store.StoreItem HCE.ExpressionInfoMap where
       , "|"
       , TE.encodeUtf8 modulePath
       , "|"
-      , topLevelExprKey  
+      , topLevelExprKey
       ]
 
 instance Store.StoreItem (IVM.IntervalMap (Int, Int) BS.ByteString) where
@@ -414,7 +414,7 @@ instance Store.StoreItem (IVM.IntervalMap (Int, Int) BS.ByteString) where
       , "|"
       , TE.encodeUtf8 modulePath
       ]
-    
+
 instance Store.StoreItem HCE.DefinitionSiteMap where
   toByteString = Serialize.encode
   fromByteString = Serialize.decode
@@ -429,7 +429,7 @@ instance Store.StoreItem HCE.DefinitionSiteMap where
       , "|"
       , TE.encodeUtf8 modulePath
       ]
-      
+
 instance Store.StoreItem (V.Vector T.Text) where
   toByteString = Serialize.encode
   fromByteString = Serialize.decode
@@ -472,7 +472,7 @@ instance Store.StoreItem GlobalIdentifierMapWrapper where
   toByteString (GlobalIdentifierMapWrapper idMap) = Serialize.encode idMap
   fromByteString bs = GlobalIdentifierMapWrapper <$> Serialize.decode bs
   type KeyArgs GlobalIdentifierMapWrapper = Proxy GlobalIdentifierMapWrapper
-  itemKey _ = "globalIdentifierMap"  
+  itemKey _ = "globalIdentifierMap"
 
 instance Store.StoreItem [PackageVersions] where
   toByteString = Serialize.encode
@@ -490,7 +490,7 @@ findTopLevelExpressions =
            | subsumes (fst currentTopLevelInterval) (fst interval) -> topLevelIntervals
            | subsumes (fst interval) (fst currentTopLevelInterval) ->
              interval : rest
-           | otherwise -> interval : topLevelIntervals)         
+           | otherwise -> interval : topLevelIntervals)
     [] .
   IVM.assocs
 
@@ -764,7 +764,7 @@ loadPackages _config mbStore
             , ignoreRight eitherPackageVersions
             , ignoreRight eitherGlobalIdentifierMap
             ]
-        return Nothing 
+        return Nothing
 loadPackages config _ = do
   packageDirectories <- findDirectories (configPackagesPath config)
   result <- mapM (loadPackageInfo config) packageDirectories
@@ -855,7 +855,7 @@ loadPackages config _ = do
         , packagePathMapCompacted
         , packageVersionsCompacted
         , globalReferenceMapCompacted
-        , globalIdentifierMapCompacted  
+        , globalIdentifierMapCompacted
         )
     else return Nothing
   where
@@ -937,7 +937,7 @@ type API = GetAllPackages
   :<|> GetIdentifiers
   :<|> GetGlobalReferences
   :<|> GetGlobalIdentifiers
-  :<|> GetHoogleDocs 
+  :<|> GetHoogleDocs
 
 type GetAllPackages = "api" :> "packages" :> Get '[JSON] AllPackages
 
@@ -975,7 +975,7 @@ type GetIdentifiers = "api" :> "identifiers"
                  [HCE.ExternalIdentifierInfo])
 
 type GetGlobalReferences = "api" :> "globalReferences"
-  :> Capture "externalId" HCE.ExternalId  
+  :> Capture "externalId" HCE.ExternalId
   :> Get '[JSON] [GlobalReferences]
 
 type GetGlobalIdentifiers = "api" :> "globalIdentifiers"
@@ -990,7 +990,7 @@ type GetHoogleDocs = "api" :> "hoogleDocs"
   :> Capture "moduleName" HCE.HaskellModuleName
   :> Capture "entity" HoogleItemSort
   :> Capture "name" T.Text
-  :> Get '[JSON] T.Text  
+  :> Get '[JSON] T.Text
 
 instance AllCTRender '[ JSON] AllPackages where
   handleAcceptH _ _ (AllPackages bytestring) =
@@ -1016,10 +1016,10 @@ instance ToHttpApiData HCE.LocatableEntity where
 
 instance ToHttpApiData HCE.ExternalId where
   toUrlPiece (HCE.ExternalId i) = i
-  
+
 instance ToHttpApiData PackageId where
   toUrlPiece (PackageId p) = p
-  
+
 instance FromHttpApiData HCE.HaskellModulePath where
   parseQueryParam = Right . HCE.HaskellModulePath
 
@@ -1031,10 +1031,10 @@ instance FromHttpApiData HCE.HaskellModuleName where
 
 instance FromHttpApiData HCE.ExternalId where
   parseQueryParam = Right . HCE.ExternalId
-  
+
 instance FromHttpApiData PackageId where
   parseQueryParam = Right . PackageId
-  
+
 --------------------------------------------------------------------------------
 -- Request handlers
 --------------------------------------------------------------------------------
@@ -1070,7 +1070,7 @@ instance A.ToJSON SourceFile
 
 getAllPackages :: ReaderT Environment IO AllPackages
 getAllPackages = asks envPackageVersions
-    
+
 getExpressions ::
      PackageId
   -> HCE.HaskellModulePath
@@ -1283,8 +1283,8 @@ getGlobalReferences ::
      HCE.ExternalId -> ReaderT Environment IO [GlobalReferences]
 getGlobalReferences externalId = do
   refMap <- asks envGlobalReferenceMap
-  return $ maybe [] S.toDescList (HM.lookup externalId refMap)    
-  
+  return $ maybe [] S.toDescList (HM.lookup externalId refMap)
+
 getReferences ::
      PackageId
   -> HCE.ExternalId
@@ -1341,7 +1341,7 @@ getReferences packageId externalId mbPage mbPerPage =
                 ]
      in case packageInfo' of
           PackageInfo packageInfo ->
-            mkRefsWithSource $ S.toList <$> HM.lookup externalId (HCE.externalIdOccMap packageInfo)            
+            mkRefsWithSource $ S.toList <$> HM.lookup externalId (HCE.externalIdOccMap packageInfo)
           PackageInfoStore pId store -> do
             let eitherOccurrences =
                   Store.lookup
@@ -1485,7 +1485,7 @@ findIdentifiers packageId query' mbPage mbPerPage =
                             respond $
                             S.toList $
                             HCE.match (T.unpack $ T.drop 4 query) trie
-                          Left _ -> respond []                          
+                          Left _ -> respond []
 
 findGlobalIdentifiers ::
      T.Text
@@ -1539,7 +1539,7 @@ valueToHoogleResultItem value =
         | T.isInfixOf "#t" url = Just Typ
       urlToSort _ = Nothing
       mbResultSort = value ^? AL.key "url" . AL._String >>= urlToSort
-   in HoogleResultItem <$> mbResultSort <*> mbModuleName <*> mbHtmlDocs      
+   in HoogleResultItem <$> mbResultSort <*> mbModuleName <*> mbHtmlDocs
 
 hoogleApiHost :: String
 hoogleApiHost = "https://hoogle.haskell.org/"
@@ -1557,7 +1557,7 @@ getHoogleDocs packageId (HCE.HaskellModuleName moduleName) itemSort name
     let hoogleQuery =
           T.unpack name ++
           " is:exact package:" ++ T.unpack (getPackageName packageName)
-        url = hoogleApiHost ++ "?hoogle=" ++ encode hoogleQuery ++ "&mode=json"        
+        url = hoogleApiHost ++ "?hoogle=" ++ encode hoogleQuery ++ "&mode=json"
         error502 e =
           throwServantError $
           err502 {errBody = BSL.fromStrict $ BSC.pack $ show e}
@@ -1601,7 +1601,7 @@ paginateItems mbPage mbPerPage items = do
       (fromIntegral totalCount)
       (\offset limit -> return . L.take limit . L.drop offset $ items)
   return (paginated, page, perPage, totalCount)
-    
+
 error404 :: BSL.ByteString -> ReaderT Environment IO a
 error404 body = throwServantError $ err404 {errBody = body}
 
@@ -1615,7 +1615,7 @@ data PackageInfo
   = PackageInfo (HCE.PackageInfo HCE.CompactModuleInfo)
   | PackageInfoStore HCE.PackageId
                      Store.Store
-  
+
 withPackageInfo ::
      PackageId
   -> (PackageInfo -> ReaderT Environment IO a)
@@ -1705,7 +1705,7 @@ withModulePath packageInfo' componentId moduleName action =
                 store
       case eitherModNameMap of
           Right modNameMap ->
-            case HM.lookup (ghcPrimHack packageInfo' moduleName) modNameMap of 
+            case HM.lookup (ghcPrimHack packageInfo' moduleName) modNameMap of
               Just componentMap -> case HM.lookup componentId componentMap of
                 Just modulePath -> action modulePath
                 Nothing -> case HM.lookup (HCE.ComponentId "lib") componentMap of
@@ -1744,7 +1744,7 @@ ghcPrimHack packageInfo' modName@(HCE.HaskellModuleName name) =
       | packageName == "ghc-prim" && name == "GHC.Prim" ->
         HCE.HaskellModuleName "GHC.Prim_"
       | otherwise -> modName
-  
+
 parsePackageId :: PackageId -> Maybe (PackageName, Maybe Version)
 parsePackageId (PackageId text) =
   case T.splitOn "-" text of
@@ -1793,7 +1793,7 @@ staticMiddleware staticFilesPrefix packagePathMap _ app req callback
               if exists
                 then callback $ sendFile path
                 else callback fileNotFound
-      _ -> callback fileNotFound     
+      _ -> callback fileNotFound
 staticMiddleware _ _ mbJsDistPath _app req callback =
   case mbJsDistPath of
     Just jsDistPath -> do
@@ -1829,14 +1829,14 @@ sendEmbeddedFile path bs =
   responseLBS
     status200
     [(hContentType, defaultMimeLookup $ T.pack $ takeFileName path)]
-    (BSL.fromStrict bs)    
+    (BSL.fromStrict bs)
 
 fileNotFound :: Response
 fileNotFound =
   responseLBS status404 [("Content-Type", "text/plain")] "Not found"
 
 throwServantError :: (MonadIO m) => ServantErr -> m a
-throwServantError = liftIO . throwIO 
+throwServantError = liftIO . throwIO
 
 server :: Environment -> ServerT API Handler
 server env =
@@ -1844,7 +1844,7 @@ server env =
     (Proxy :: Proxy API)
     toServantHandler
     (getAllPackages :<|>
-     getDefinitionSite :<|>     
+     getDefinitionSite :<|>
      getExpressions :<|>
      getReferences :<|>
      findIdentifiers :<|>

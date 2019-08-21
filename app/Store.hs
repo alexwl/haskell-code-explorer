@@ -30,7 +30,7 @@ import Data.Serialize (
 #if MIN_VERSION_cereal(0,5,8)
 #else
   get, put
-#endif  
+#endif
   )
 import GHC.Generics (Generic)
 import Prelude hiding (lookup)
@@ -43,7 +43,7 @@ data Store = Store
   { index :: M.Map BSS.ShortByteString Location
   , values :: BS.ByteString
   }
-  
+
 data Location = Location
   { offset :: Int
   , length :: Int
@@ -56,7 +56,7 @@ instance Serialize Location
 instance Serialize BSS.ShortByteString where
   put = put . BSS.fromShort
   get = BSS.toShort <$> get
-#endif  
+#endif
 
 class StoreItem item where
   toByteString :: item -> BS.ByteString
@@ -74,7 +74,7 @@ data ReadMode
   = ReadEntireFile
   | MemoryMapFile
   deriving (Show, Eq)
- 
+
 load :: FilePath -> ReadMode -> IO (Either String Store)
 load directoryPath readMode = do
   let valuesFilePath = directoryPath </> valuesFileName
@@ -99,7 +99,7 @@ load directoryPath readMode = do
 
 lookup :: (StoreItem item) => KeyArgs item -> Store -> Either String item
 lookup keyArgs = lookupByteString (itemKey keyArgs)
-      
+
 lookupByteString ::
      (StoreItem item) => BSS.ShortByteString -> Store -> Either String item
 lookupByteString key store =
@@ -127,7 +127,7 @@ createStore directoryPath action =
   withFile (directoryPath </> valuesFileName) WriteMode $ \valuesHandle -> do
     locMap <- action valuesHandle
     BS.writeFile (directoryPath </> indexFileName) (encode locMap)
-  
+
 writeValues ::
      Handle
   -> M.Map BSS.ShortByteString Location

@@ -11,12 +11,12 @@ export default Ember.Route.extend({
     };
   },
   setupController(controller, model) {
-    this._super(controller, model);    
+    this._super(controller, model);
     controller.set('createSearchUrlFunction',(query) => {
       return urls.globalIdentifiersUrl(query);
     });
   },
-  afterModel () {    
+  afterModel () {
     const onmouseup = (event) => {
       // This makes links in documentation clickable
       if(event.target.dataset.location) {
@@ -32,11 +32,11 @@ export default Ember.Route.extend({
       }
     };
     this._onmouseup = onmouseup;
-    document.addEventListener('mouseup',onmouseup);    
+    document.addEventListener('mouseup',onmouseup);
   },
   deactivate() {
     if(this._onmouseup) {
       document.removeEventListener('mouseup',this._onmouseup);
     }
-  }  
+  }
 });

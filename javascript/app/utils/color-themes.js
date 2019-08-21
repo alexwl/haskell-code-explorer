@@ -1,6 +1,6 @@
 function colorThemeToCss(colorTheme) {
   const css = `
-   body {     
+   body {
      color: ${colorTheme.defaultColor} !important;
      background-color: ${colorTheme.backgroundColor} !important;
    }
@@ -31,7 +31,7 @@ function colorThemeToCss(colorTheme) {
    }
    .declarations-header {
      background-color: ${colorTheme.navigationPanelColor} !important;
-     border: 1px solid ${colorTheme.borderColor} !important;     
+     border: 1px solid ${colorTheme.borderColor} !important;
    }
    li.declaration {
      border-bottom: 1px solid ${colorTheme.borderColor} !important;
@@ -73,19 +73,19 @@ function colorThemeToCss(colorTheme) {
      border-left: 1px solid ${colorTheme.borderColor} !important;
      border-right: 1px solid ${colorTheme.borderColor} !important;
    }
-   ul.autocomplete-items > li {     
+   ul.autocomplete-items > li {
      border-bottom: 1px solid ${colorTheme.borderColor} !important;
    }
-   ul.autocomplete-items > li:hover {     
+   ul.autocomplete-items > li:hover {
      background-color: ${colorTheme.highlightedLineColor} !important;
    }
-   ul.autocomplete-items > li.highlighted {     
+   ul.autocomplete-items > li.highlighted {
      background-color: ${colorTheme.highlightedLineColor} !important;
    }
    .source-code-snippet {
       color: ${colorTheme.defaultColor} !important;
       border-bottom: 1px solid ${colorTheme.borderColor} !important;
-   }  
+   }
    .source-code-snippet:hover {
       background-color: ${colorTheme.highlightedLineColor} !important;
    }
@@ -94,7 +94,7 @@ function colorThemeToCss(colorTheme) {
       border-top: 1px solid ${colorTheme.borderColor} !important;
    }
    .bottom-panel-header {
-      border-bottom: 1px solid ${colorTheme.borderColor} !important;      
+      border-bottom: 1px solid ${colorTheme.borderColor} !important;
    }
    .paginated-list-header {
       border-bottom: 1px solid ${colorTheme.borderColor} !important;
@@ -118,7 +118,7 @@ function colorThemeToCss(colorTheme) {
    }
    .references-packages  {
       border-right:1px solid ${colorTheme.borderColor} !important;
-   }`;   
+   }`;
   return css;
 }
 
@@ -150,14 +150,14 @@ const lightTheme = {
   name: "Light theme",
   description: "Light theme (Github based)",
   defaultColor: "#24292e",
-  backgroundColor: "#ffffff",  
+  backgroundColor: "#ffffff",
   typeColor: "#005cc5",
   literalColor: "#032f62",
   topLevelIdFromCurrentModule : "#6f42c1",
   localIdentifierColor: ["#005C31",
                      "#2BCE48","#808080","#8F7C00",
                      "#C20088","#FFA405","#ffa8bb","#426600","#FF0010",
-                     "#09d7d8","#00998F","#990000","#FF5005"],  
+                     "#09d7d8","#00998F","#990000","#FF5005"],
   menuColor: "#f2f4f8",
   menuLinkColor : "#24292e",
   infoWindowColor: "#f2f4f8",
@@ -171,7 +171,7 @@ function updateColorThemeCss (colorTheme) {
   const newStyle = document.createElement('style');
   newStyle.type = 'text/css';
   newStyle.innerHTML = colorThemeToCss(colorTheme);
-  newStyle.id = 'color-theme';  
+  newStyle.id = 'color-theme';
   const oldStyle = document.querySelector("style#color-theme");
   if(oldStyle) {
     oldStyle.parentElement.removeChild(oldStyle);
@@ -186,6 +186,6 @@ const themes = {
 
 export {
   updateColorThemeCss,
-  colorThemeToCss,  
-  themes  
+  colorThemeToCss,
+  themes
 }

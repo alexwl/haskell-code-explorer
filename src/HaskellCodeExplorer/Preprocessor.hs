@@ -19,7 +19,7 @@ import HaskellCodeExplorer.Types
   , HaskellModulePath(..)
   , LinePragma(..)
   , SourceCodeTransformation(..)
-  , haskellPreprocessorExtensions  
+  , haskellPreprocessorExtensions
   )
 import System.FilePath (normalise,takeExtension,takeFileName)
 
@@ -86,13 +86,13 @@ createSourceCodeTransformation currentModulePath originalSourceCode sourceCodeAf
 -- | Parses line pragma
 linePragmaParser :: AT.Parser (Int, Maybe T.Text)
 linePragmaParser = pragma1 <|> pragma2
-  where   
+  where
     pragma1 :: AT.Parser (Int, Maybe T.Text)
     pragma1 = parser "#" "line"
-    
+
     pragma2 :: AT.Parser (Int, Maybe T.Text)
     pragma2 = parser "{-#" "LINE"
-    
+
     parser :: T.Text -> T.Text -> AT.Parser (Int, Maybe T.Text)
     parser start line = do
       _ <- AT.string start
@@ -103,9 +103,9 @@ linePragmaParser = pragma1 <|> pragma2
       _ <- AT.takeWhile (== ' ')
       mbName <- (Just <$> fileName) <|> return Nothing
       return (num, mbName)
-      
+
     fileName :: AT.Parser T.Text
-    fileName = AT.string "\"" *> AT.takeTill (== '\"') <* AT.string "\""    
+    fileName = AT.string "\"" *> AT.takeTill (== '\"') <* AT.string "\""
 
 data Line = FirstLine | LastLine Int | Pragma LinePragma deriving (Show,Eq)
 

@@ -6,7 +6,7 @@ function initializeLineSelection(sourceCodeContainerElement,component) {
     }
     window.addEventListener("hashchange",onhashchange);
     component._onhashchange = onhashchange;
-    
+
     let shiftPressed;
     const onkeydown = function (event) {
       if(event.keyCode === 16) { shiftPressed = true; }
@@ -14,12 +14,12 @@ function initializeLineSelection(sourceCodeContainerElement,component) {
     const onkeyup = function (event) {
       if(event.keyCode === 16) { shiftPressed = false; }
     };
-    
+
     document.addEventListener('keydown',onkeydown);
     document.addEventListener('keyup',onkeyup);
     component._onkeydown = onkeydown;
     component._onkeyup = onkeyup;
-    
+
     let selectedLine1,selectedLine2;
     lineNumbers.forEach((lineNumberElement) => {
       lineNumberElement.onclick = function()  {
@@ -35,7 +35,7 @@ function initializeLineSelection(sourceCodeContainerElement,component) {
               window.location.hash = "L"+selectedLine2+"-L"+selectedLine1;
             }
           }
-        } else {          
+        } else {
           selectedLine1 = number;
           selectedLine2 = null;
           highlightLines(sourceCodeContainerElement,selectedLine1,selectedLine1);
@@ -43,11 +43,11 @@ function initializeLineSelection(sourceCodeContainerElement,component) {
         }
       }
     });
-    const lines = highlightSelectedLines(sourceCodeContainerElement);    
+    const lines = highlightSelectedLines(sourceCodeContainerElement);
     if(lines.length) {
       selectedLine1 = lines[0];
       selectedLine2 = lines[1];
-    }    
+    }
   }
 }
 
@@ -85,18 +85,18 @@ function highlightSelectedLines (sourceCodeContainerElement) {
 
 function scrollLineIntoView(lineElement,sourceCodeContainerElement) {
   lineElement.parentNode.scrollIntoView();
-  const container = sourceCodeContainerElement.parentNode.parentNode;          
+  const container = sourceCodeContainerElement.parentNode.parentNode;
   const windowHeight = container.offsetHeight;
   const fullHeight = sourceCodeContainerElement.offsetHeight;
 
-  if(fullHeight - container.scrollTop > windowHeight) {    
+  if(fullHeight - container.scrollTop > windowHeight) {
     container.scrollTop = container.scrollTop - (windowHeight/2 - 20);
   }
 }
 
-function highlightLines(parentElement,startLine,endLine) {  
+function highlightLines(parentElement,startLine,endLine) {
   const lineElements = Array.prototype.slice.call(parentElement.querySelectorAll("td.line-content"));
-  lineElements.forEach((lineElement) => {  
+  lineElements.forEach((lineElement) => {
     const number = parseInt(lineElement.id.substring(2)); //<td "id"="LC10">...</td>
     if(number >= startLine && number <= endLine) {
       lineElement.classList.add('highlighted-line');

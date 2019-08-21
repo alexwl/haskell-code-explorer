@@ -4,7 +4,7 @@ import { setupApplicationTest } from 'ember-qunit';
 
 module('Acceptance | packages', function(hooks) {
   setupApplicationTest(hooks);
-  
+
   //Test data is in file 'server/mocks/packages.js'
   test('visiting /', async function(assert) {
     await visit('/');

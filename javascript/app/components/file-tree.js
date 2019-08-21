@@ -10,7 +10,7 @@ const directoryTreeToJsTree = function (packageId,directoryTree) {
       jsTreeNode.a_attr = {href:"/package/" + packageId + "/show/" + node.path};
     }
     if(node.tag === "Dir") {
-      jsTreeNode.children = directoryTreeToJsTree(packageId,node);      
+      jsTreeNode.children = directoryTreeToJsTree(packageId,node);
       jsTreeNode.state = {"opened" : containsHaskellModule(node)};
     } else {
       if(node.isHaskellModule) {
@@ -25,8 +25,8 @@ const directoryTreeToJsTree = function (packageId,directoryTree) {
   });
 };
 
-const containsHaskellModule = function(node) {  
-  return node.contents.some((n) => {    
+const containsHaskellModule = function(node) {
+  return node.contents.some((n) => {
     if(n.tag === "File") {
       return n.isHaskellModule;
     } else {
@@ -35,9 +35,9 @@ const containsHaskellModule = function(node) {
   });
 }
 
-const fileExtension = function (filename) {  
-  const idx = filename.lastIndexOf('.');  
-  return (idx < 1) ? "" : filename.substr(idx + 1);  
+const fileExtension = function (filename) {
+  const idx = filename.lastIndexOf('.');
+  return (idx < 1) ? "" : filename.substr(idx + 1);
 }
 
 export default Ember.Component.extend({
@@ -49,10 +49,10 @@ export default Ember.Component.extend({
     });
   }),
   didInsertElement : function () {
-    this._super(...arguments);    
+    this._super(...arguments);
     const element = this.element.getElementsByClassName('file-tree')[0];
     const component = this;
-    
+
     const jstreeElement = Ember.$(element).jstree({
       'core' : {
         'data' : directoryTreeToJsTree(this.get('packageId'),this.get('directoryTree'))
@@ -69,16 +69,16 @@ export default Ember.Component.extend({
       'sort' : function (a,b) {
         const node1 = this.get_node(a).data;
         const node2 = this.get_node(b).data;
-        if(component.get("sortType") === "alphabetical") {          
+        if(component.get("sortType") === "alphabetical") {
           return node1.name > node2.name;
-        } else {          
+        } else {
           const extendedName1 = (node1.tag === "Dir" ? "0" : "1") + fileExtension(node1.name) + node1.name;
-          const extendedName2 = (node2.tag === "Dir" ? "0" : "1") + fileExtension(node2.name) + node2.name;          
+          const extendedName2 = (node2.tag === "Dir" ? "0" : "1") + fileExtension(node2.name) + node2.name;
           return extendedName1 > extendedName2;
         }
       }
     });
-    
+
     jstreeElement.on("select_node.jstree",(event,data) => {
       const file = data.node.data;
       if(file.tag != "Dir") {
@@ -86,8 +86,8 @@ export default Ember.Component.extend({
       }
     });
 
-    const jstree = jstreeElement.jstree(true);    
-            
+    const jstree = jstreeElement.jstree(true);
+
     if(this.get('currentFile')) {
       jstree.select_node(this.get('currentFile'));
       const node = jstree.get_node(this.get('currentFile'),true)[0];
@@ -111,7 +111,7 @@ export default Ember.Component.extend({
     }
   }),
   actions : {
-    hide() {      
+    hide() {
       this.get('hide')();
     }
   }

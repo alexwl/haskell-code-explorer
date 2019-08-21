@@ -14,8 +14,8 @@ Router.map(function() {
       });
     });
     this.route('search',{path:'/search/:query'});
-  });  
-  this.route('bad-url', { path: '/*badurl' });  
+  });
+  this.route('bad-url', { path: '/*badurl' });
 });
 
 export default Router;

@@ -1,14 +1,14 @@
 <div class="source-code-container"></div>
 {{#if declarations}}
     <div class="declarations">
-        <div class="declarations-header">            
+        <div class="declarations-header">
             <div class="input-group">
                 {{input class="form-control" value=query placeholder="Identifier"}}<a class="hide-declarations" href="#" {{action "toggleShowDeclarations"}}>{{showDeclarationsLabel}}</a>
             </div>
         </div>
         {{#if showDeclarations}}
-            <div id="declarations-content" class="declarations-content">                
-                <ul>                    
+            <div id="declarations-content" class="declarations-content">
+                <ul>
                     {{#infinite-list containerElementId="declarations-content" elements=filteredDeclarations perPage=30 as |declaration|}}
                         <li class="declaration">
                             <div class="declaration">

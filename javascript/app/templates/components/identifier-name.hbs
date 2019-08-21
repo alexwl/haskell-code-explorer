@@ -2,7 +2,7 @@
     <span class="source-code-font break-word identifier-menu-item" style={{style}}>{{#if identifierInfo.demangledOccName}}{{identifierInfo.demangledOccName}}{{else}}{{name}}{{/if}}</span>
     {{#unless isBinder}}
         {{#if location}}
-            <span class="identifier-menu-item">{{location}}</span>            
+            <span class="identifier-menu-item">{{location}}</span>
             <span class="link identifier-menu-item" onmouseup={{action "goToDefinition"}}>Go to definition</span>
         {{/if}}
     {{/unless}}

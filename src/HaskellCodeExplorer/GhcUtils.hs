@@ -20,7 +20,7 @@ module HaskellCodeExplorer.GhcUtils
   , occNameNameSpace
   , identifierKey
   , nameKey
-  , mbIdDetails  
+  , mbIdDetails
     -- * Syntax manipulation
   , hsGroupVals
   , hsPatSynDetails
@@ -32,18 +32,18 @@ module HaskellCodeExplorer.GhcUtils
   , isHsBoot
   , moduleLocationInfo
   , nameLocationInfo
-  , occNameLocationInfo  
-  , nameDocumentation  
+  , occNameLocationInfo
+  , nameDocumentation
   , srcSpanToLineAndColNumbers
     -- * Type-related functions
-  , tyThingToId  
+  , tyThingToId
   , tidyIdentifierType
   , patSynId
   , applyWrapper
-  , wrapperTypes  
-  , tyVarsOfType  
+  , wrapperTypes
+  , tyVarsOfType
   , tyConsOfType
-  , updateOccNames  
+  , updateOccNames
   , mkType
     -- * Documentation processing
   , collectDocs
@@ -80,7 +80,7 @@ import DynFlags ()
 import FastString (mkFastString, unpackFS)
 import GHC
   ( DynFlags
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)        
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
   , HsDocString
 #else
   , HsDocString (..)
@@ -91,12 +91,12 @@ import GHC
   , SrcSpan(..)
   , RealSrcSpan(..)
   , ClsInstDecl(..)
-  , TyClDecl(..)  
-  , HsDataDefn(..)  
+  , TyClDecl(..)
+  , HsDataDefn(..)
   , NewOrData(..)
   , Id
-  , HsGroup(..)  
-  , HsBindLR(..)  
+  , HsGroup(..)
+  , HsBindLR(..)
   , HsValBindsLR(..)
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,1,0)
   , HsPatSynDetails
@@ -104,18 +104,18 @@ import GHC
   , HsPatSynDetails(..)
 #endif
   , Located
-  , IE(..)  
+  , IE(..)
   , TyThing(..)
-  , LHsDecl  
+  , LHsDecl
   , HsDecl(..)
-  , DocDecl(..)  
+  , DocDecl(..)
   , ConDecl(..)
-  , HsConDetails(..)  
-  , ConDeclField(..)  
+  , HsConDetails(..)
+  , ConDeclField(..)
   , DataFamInstDecl(..)
-  , LSig  
-  , Sig(..)  
-  , ForeignDecl(..) 
+  , LSig
+  , Sig(..)
+  , ForeignDecl(..)
   , FixitySig(..)
   , tcdName
   , collectHsBindBinders
@@ -127,12 +127,12 @@ import GHC
   , getConArgs
   , unpackHDS
   , NoExt(..)
-  , extFieldOcc  
+  , extFieldOcc
 #else
   , getConDetails
   , selectorFieldOcc
 #endif
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)    
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
   , tyClGroupTyClDecls
   , LIEWrappedName
   , hsGroupInstDecls
@@ -157,10 +157,10 @@ import GHC
   , isGoodSrcSpan
   , isLocalId
   , isDataFamilyDecl
-  , tyFamInstDeclName 
+  , tyFamInstDeclName
   , idType
   , hsib_body
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 #else
   , tfe_pats
 #endif
@@ -169,7 +169,7 @@ import GHC
 
 import qualified HaskellCodeExplorer.Types as HCE
 import HscTypes (TypeEnv, lookupTypeEnv)
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 import HsExtension (GhcRn,IdP)
 #endif
 import IdInfo (IdDetails(..))
@@ -232,8 +232,8 @@ import Type
   , mkInvForAllTys
 #if !MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
   , mkNamedBinder
-#endif  
-  , piResultTy  
+#endif
+  , piResultTy
   , pprSigmaType
   , splitFunTy_maybe
   , tidyOpenType
@@ -355,8 +355,8 @@ tyClDeclPrefix tyClDecl =
         ClassDecl {} -> "class "
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
         XTyClDecl _ -> ""
-#endif    
-    
+#endif
+
 demangleOccName :: Name -> T.Text
 demangleOccName name
   | isDerivedOccName (nameOccName name) =
@@ -382,7 +382,7 @@ demangleOccName name
           | otherwise = occName
      in removePrefix $ nameToText name
   | otherwise = nameToText name
-    
+
 stringBufferToByteString :: StringBuffer -> BS.ByteString
 stringBufferToByteString (StringBuffer buf len cur) =
   BSI.fromForeignPtr buf cur len
@@ -392,12 +392,12 @@ nameSort n =
   if isExternalName n
     then HCE.External
     else HCE.Internal
-  
+
 occNameNameSpace :: OccName -> HCE.NameSpace
 occNameNameSpace n
   | isDataConNameSpace (occNameSpace n) = HCE.DataName
   | isTvNameSpace (occNameSpace n) = HCE.TvName
-  | isValNameSpace (occNameSpace n) = HCE.VarName  
+  | isValNameSpace (occNameSpace n) = HCE.VarName
   | otherwise = HCE.TcClsName
 
 -- Two 'Id''s may have different types even though they have the same 'Unique'.
@@ -431,7 +431,7 @@ mbIdDetails v
       CoVarId -> Just HCE.CoVarId
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
       JoinId _ -> Just HCE.JoinId
-#endif        
+#endif
 mbIdDetails _ = Nothing
 
 --------------------------------------------------------------------------------
@@ -446,7 +446,7 @@ hsGroupVals :: HsGroup Name -> [GenLocated SrcSpan (HsBindLR Name Name)]
 hsGroupVals hsGroup =
   filter (isGoodSrcSpan . getLoc) $
   case hs_valds hsGroup of
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)    
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
     XValBindsLR (NValBinds binds _) -> concatMap (bagToList . snd) binds
 #else
     ValBindsOut binds _ -> concatMap (bagToList . snd) binds
@@ -457,7 +457,7 @@ hsPatSynDetails :: HsPatSynDetails a -> [a]
 hsPatSynDetails patDetails =
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
   case patDetails of
-    InfixCon name1 name2 -> [name1, name2]    
+    InfixCon name1 name2 -> [name1, name2]
     PrefixCon fields -> fields
     RecCon fields -> concatMap
         (\field -> [recordPatSynSelectorId field, recordPatSynPatVar field])
@@ -494,7 +494,7 @@ ieLocNames :: IE Name -> [Located Name]
 ieLocNames (XIE _) = []
 ieLocNames (IEVar _ n) =
 #else
-ieLocNames (IEVar n) = 
+ieLocNames (IEVar n) =
 #endif
   [unwrapName n]
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
@@ -533,7 +533,7 @@ lookupIdInTypeEnv typeEnv name = do
         | isExternalName name = lookupTypeEnv typeEnv name
         | otherwise = Nothing
   case mbTyThing of
-    Just tyThing -> tyThingToId tyThing    
+    Just tyThing -> tyThingToId tyThing
     _ -> Nothing
 
 lookupNameModuleAndPackage ::
@@ -568,7 +568,7 @@ lookupNameModuleAndPackage flags currentPackageId name =
 --------------------------------------------------------------------------------
 
 isHsBoot :: HCE.HaskellModulePath -> Bool
-isHsBoot = T.isSuffixOf "-boot" . HCE.getHaskellModulePath 
+isHsBoot = T.isSuffixOf "-boot" . HCE.getHaskellModulePath
 
 moduleLocationInfo ::
      DynFlags
@@ -619,7 +619,7 @@ moduleLocationInfo flags moduleNameMap currentPackageId compId moduleName =
                            else HCE.ComponentId "lib")
                 Nothing -> currentPackageLocation
             _ -> currentPackageLocation
-             
+
 isDefinedInCurrentModule ::
      HCE.SourceCodeTransformation -> HCE.HaskellFilePath -> Bool
 isDefinedInCurrentModule transformation file =
@@ -628,7 +628,7 @@ isDefinedInCurrentModule transformation file =
         HCE.getHaskellModulePath $
         HCE.filePath (transformation :: HCE.SourceCodeTransformation)
    in HCE.getHaskellFilePath file == modPath || (file `elem` includedFiles)
-      
+
 nameLocationInfo ::
      DynFlags
   -> HCE.PackageId
@@ -660,7 +660,7 @@ nameLocationInfo flags currentPackageId compId transformation fileMap defSiteMap
                    eitherEnd =
                      HCE.fromOriginalLineNumber
                        transformation
-                       (filePath, srcSpanEndLine srcSpan)                      
+                       (filePath, srcSpanEndLine srcSpan)
                 in case (,) eitherStart eitherEnd of
                      (Right startLine,Right endLine) ->
                          let  modulePath = HCE.filePath (transformation :: HCE.SourceCodeTransformation)
@@ -739,7 +739,7 @@ mkLocatableEntity name mbInstanceHead
     case occNameNameSpace . nameOccName $ name of
       HCE.VarName -> HCE.Val
       HCE.DataName -> HCE.Val
-      _ -> HCE.Typ        
+      _ -> HCE.Typ
 
 occNameLocationInfo ::
      DynFlags
@@ -823,9 +823,9 @@ lookupNameDocumentation name defSiteMap =
 
 srcSpanToFilePath :: SrcSpan -> Maybe HCE.HaskellFilePath
 srcSpanToFilePath (RealSrcSpan s) =
-  Just . HCE.HaskellFilePath . T.pack . normalise . unpackFS . srcSpanFile $ s   
+  Just . HCE.HaskellFilePath . T.pack . normalise . unpackFS . srcSpanFile $ s
 srcSpanToFilePath (UnhelpfulSpan _) = Nothing
-   
+
 srcSpanToLineAndColNumbers ::
      HCE.SourceCodeTransformation
   -> SrcSpan
@@ -894,7 +894,7 @@ applyWrapper (WpEvLam v) t = mkFunTy (evVarPred v) t
 applyWrapper (WpEvApp _ev) t = case splitFunTy_maybe t of
   Just (_arg,res) -> res
   Nothing -> t
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)  
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 applyWrapper (WpTyLam v) t = mkForAllTy v Required t
 #else
 applyWrapper (WpTyLam v) t = mkForAllTy (mkNamedBinder Invisible v) t
@@ -929,10 +929,10 @@ mkType flags typ =
            else Nothing)
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
-typeToText :: DynFlags -> Type -> T.Text    
+typeToText :: DynFlags -> Type -> T.Text
 typeToText flags = T.pack . showSDoc flags . pprIfaceType . toIfaceType
 #else
-typeToText :: DynFlags -> Type -> T.Text    
+typeToText :: DynFlags -> Type -> T.Text
 typeToText = toText
 #endif
 
@@ -947,7 +947,7 @@ toTypeComponents flags typ =
         updateOccNames
           (\unique occName -> ";," ++ occName ++ "," ++ unique ++ ";")
           typ
-      -- Dirty but simple way to extract a list of TypeComponent from a type signature.      
+      -- Dirty but simple way to extract a list of TypeComponent from a type signature.
       -- Assumptions :
       -- 1. Character ';' cannot appear anywhere in a type signature
       -- 2. Character ',' cannot appear in an 'OccName'
@@ -984,11 +984,11 @@ updateOccNames update = everywhere (mkT updateType)
               (occNameSpace oldOccName)
               (update unique (occNameString oldOccName))
        in mkInternalName (nameUnique oldName) newOccName (nameSrcSpan oldName)
-          
+
 -- | This function doesn't look through type synonyms
 tyConsOfType :: Type -> [Id]
 tyConsOfType =
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)  
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
   nonDetEltsUniqSet . everything unionUniqSets (emptyVarSet `mkQ` tyCon)
 #else
   uniqSetToList . everything unionUniqSets (emptyVarSet `mkQ` tyCon)
@@ -999,7 +999,7 @@ tyConsOfType =
     tyCon _ = emptyUniqSet
 
 tyVarsOfType :: (Data a) => a -> [Id]
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)  
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 tyVarsOfType = nonDetEltsUniqSet . everything unionVarSet (emptyVarSet `mkQ` tyVar)
 #else
 tyVarsOfType = varSetElems . everything unionVarSet (emptyVarSet `mkQ` tyVar)
@@ -1027,7 +1027,7 @@ collectDocs = go Nothing []
 
       | Nothing <- prev = go Nothing (str : docs) ds
       | Just decl <- prev = finished decl docs (go Nothing [str] ds)
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)        
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
     go prev docs (L _ (DocD _ (DocCommentPrev str)):ds) = go prev (str : docs) ds
 #else
     go prev docs (L _ (DocD (DocCommentPrev str)):ds) = go prev (str : docs) ds
@@ -1043,9 +1043,9 @@ ungroup :: HsGroup Name -> [LHsDecl Name]
 #endif
 ungroup group_ =
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-  mkDecls (tyClGroupTyClDecls . hs_tyclds) (TyClD NoExt) group_ ++  
+  mkDecls (tyClGroupTyClDecls . hs_tyclds) (TyClD NoExt) group_ ++
 #elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
-  mkDecls (tyClGroupTyClDecls . hs_tyclds) TyClD group_ ++  
+  mkDecls (tyClGroupTyClDecls . hs_tyclds) TyClD group_ ++
 #else
   mkDecls (tyClGroupConcat . hs_tyclds) TyClD group_ ++
 #endif
@@ -1054,17 +1054,17 @@ ungroup group_ =
   mkDecls hs_derivds (DerivD NoExt) group_ ++
   mkDecls hs_defds (DefD NoExt) group_ ++
   mkDecls hs_fords (ForD NoExt) group_ ++
-  mkDecls hs_docs (DocD NoExt) group_ ++  
+  mkDecls hs_docs (DocD NoExt) group_ ++
 #else
   mkDecls hs_derivds DerivD group_ ++
   mkDecls hs_defds DefD group_ ++
   mkDecls hs_fords ForD group_ ++
   mkDecls hs_docs DocD group_ ++
 #endif
-  
+
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
   mkDecls hsGroupInstDecls (InstD NoExt) group_ ++
-#elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)  
+#elif MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
   mkDecls hsGroupInstDecls InstD group_ ++
 #else
   mkDecls hs_instds InstD group_ ++
@@ -1076,17 +1076,17 @@ ungroup group_ =
 #else
   mkDecls (typesigs . hs_valds) SigD group_ ++
   mkDecls (valbinds . hs_valds) ValD group_
-#endif  
+#endif
 
-  
+
   where
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)    
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
     typesigs (XValBindsLR (NValBinds _ sigs)) = filter isUserLSig sigs
 #else
     typesigs (ValBindsOut _ sigs) = filter isUserLSig sigs
 #endif
     typesigs _ = []
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)        
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
     valbinds (XValBindsLR (NValBinds binds _)) = concatMap (bagToList . snd) binds
 #else
     valbinds (ValBindsOut binds _) = concatMap (bagToList . snd) binds
@@ -1107,7 +1107,7 @@ classDeclDocs :: TyClDecl Name -> [(LHsDecl Name, [HsDocString])]
 classDeclDocs class_ = collectDocs . sortByLoc $ decls
   where
     decls = docs ++ defs ++ sigs ++ ats
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)    
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
     docs = mkDecls tcdDocs (DocD NoExt) class_
     defs = mkDecls (bagToList . tcdMeths) (ValD NoExt) class_
     sigs = mkDecls tcdSigs (SigD NoExt) class_
@@ -1136,7 +1136,7 @@ selectorDocs :: ConDecl GhcRn -> [(Name, [HsDocString], SrcSpan)]
 selectorDocs :: ConDecl Name -> [(Name, [HsDocString], SrcSpan)]
 #endif
 selectorDocs con =
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)  
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
   case getConArgs con of
 #else
   case getConDetails con of
@@ -1159,7 +1159,7 @@ selectorDocs con =
         flds
     _ -> []
 
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)    
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 subordinateNamesWithDocs :: [GenLocated SrcSpan (HsDecl GhcRn)] -> [(Name, [HsDocString], SrcSpan)]
 #else
 subordinateNamesWithDocs :: [GenLocated SrcSpan (HsDecl Name)] -> [(Name, [HsDocString], SrcSpan)]
@@ -1189,14 +1189,14 @@ subordinateNamesWithDocs =
          InstD (DataFamInstD DataFamInstDecl {..}) ->
 #endif
 
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)               
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
            concatMap (conDeclDocs . unLoc) . dd_cons . feqn_rhs  . hsib_body $ dfid_eqn
 #else
            concatMap (conDeclDocs . unLoc) . dd_cons $ dfid_defn
 #endif
          _ -> [])
 
-    
+
 isUserLSig :: LSig name -> Bool
 isUserLSig (L _ TypeSig {})    = True
 isUserLSig (L _ ClassOpSig {}) = True
@@ -1239,8 +1239,8 @@ getMainDeclBinder (ForD ForeignExport {}) = []
 getMainDeclBinder _ = []
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
-sigNameNoLoc :: Sig pass -> [IdP pass]    
-#else    
+sigNameNoLoc :: Sig pass -> [IdP pass]
+#else
 sigNameNoLoc :: Sig name -> [name]
 #endif
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
@@ -1293,7 +1293,7 @@ hsDocsToDocH flags rdrEnv =
 #else
     . parseParas
 #endif
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)    
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
     . concatMap unpackHDS
 #else
     . concatMap (unpackFS . (\(HsDocString s) -> s))
@@ -1368,7 +1368,7 @@ rename dflags gre = rn
       DocEmpty -> DocEmpty
       DocString str -> DocString str
       DocHeader (Header l t) -> DocHeader $ Header l (rn t)
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)      
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
       DocTable t -> DocTable (rn <$> t)
 #endif
 
@@ -1400,4 +1400,4 @@ makeAnchorId (f:r) = escape isAlpha f ++ concatMap (escape isLegal) r
     isLegal ':' = True
     isLegal '_' = True
     isLegal '.' = True
-    isLegal c = isAscii c && isAlphaNum c    
+    isLegal c = isAscii c && isAlphaNum c

@@ -42,7 +42,7 @@ import Options.Applicative
   , strOption
   , value
   )
-import Paths_haskell_code_explorer as HSE (version)  
+import Paths_haskell_code_explorer as HSE (version)
 import System.Directory (createDirectoryIfMissing)
 import System.Exit (ExitCode(..), exitWith)
 import System.FilePath ((</>))
@@ -187,7 +187,7 @@ logger loggerSet minLogLevel logLevel msg =
     let showLogLevel :: LogLevel -> T.Text
         showLogLevel LevelDebug = "[debug]"
         showLogLevel LevelInfo = "[info]"
-        showLogLevel LevelWarn = "[warn]"        
+        showLogLevel LevelWarn = "[warn]"
         showLogLevel LevelError = "[error]"
         showLogLevel (LevelOther t) =  T.concat ["[",t,"]"]
         text =

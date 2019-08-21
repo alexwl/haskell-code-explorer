@@ -1,6 +1,6 @@
 import Ember from 'ember';
 
-function show(component) {  
+function show(component) {
   const height = Math.floor(component.$containerElement.height() /2);
   component.$().css({
     "display":"block",
@@ -40,13 +40,13 @@ export default Ember.Component.extend({
         }
       });
     });
-  },  
+  },
   visibilityObserver : Ember.observer('visible',function () {
     this.get('visible') ? show(this) : hide(this);
   }),
   actions : {
     close () {
-      this.set('visible',false);      
+      this.set('visible',false);
     }
   }
 });
