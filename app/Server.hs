@@ -125,7 +125,11 @@ import Servant
   , Header
   , Headers
   , QueryParam
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0)
+  , ServerError
+#else
   , ServantErr
+#endif
   , ServerT
   , ToHttpApiData(..)
   , addHeader
@@ -1835,7 +1839,11 @@ fileNotFound :: Response
 fileNotFound =
   responseLBS status404 [("Content-Type", "text/plain")] "Not found"
 
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0)
+throwServantError :: (MonadIO m) => ServerError -> m a
+#else
 throwServantError :: (MonadIO m) => ServantErr -> m a
+#endif
 throwServantError = liftIO . throwIO 
 
 server :: Environment -> ServerT API Handler
