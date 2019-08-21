@@ -1843,6 +1843,7 @@ fileNotFound =
 throwServantError :: (MonadIO m) => ServerError -> m a
 #else
 throwServantError :: (MonadIO m) => ServantErr -> m a
+#endif
 throwServantError = liftIO . throwIO
 
 server :: Environment -> ServerT API Handler
