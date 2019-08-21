@@ -74,13 +74,13 @@ import HsDecls
   , InstDecl
   , TyClDecl
 #endif
-  , InstDecl(..)  
+  , InstDecl(..)
   , group_tyclds
   , tyClDeclLName
   , tcdName
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
   , hsGroupInstDecls
-#endif    
+#endif
   )
 import HsDoc(HsDocString)
 import HsImpExp (IE(..), ImportDecl(..))
@@ -101,9 +101,9 @@ import Module(Module(..))
 import Name (Name, OccName, getSrcSpan, nameOccName, nameSrcSpan, nameUnique)
 import Prelude hiding(id,span)
 import RdrName(GlobalRdrEnv)
-import SrcLoc (isOneLineSpan)  
+import SrcLoc (isOneLineSpan)
 import TcRnTypes (tcVisibleOrphanMods, tcg_inst_env, tcg_rdr_env, tcg_type_env)
-import qualified Text.Blaze.Html5 as H 
+import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 import UniqDFM (eltsUDFM)
@@ -118,14 +118,14 @@ type ModuleDependencies
    = ( HM.HashMap HCE.HaskellFilePath HCE.HaskellModulePath
      , HM.HashMap HCE.HaskellModulePath HCE.DefinitionSiteMap
      , HM.HashMap HCE.HaskellModuleName (HM.HashMap HCE.ComponentId HCE.HaskellModulePath))
-  
+
 type ModuleGhcData
    = ( DynFlags
      , TypecheckedModule
      , HomePackageTable
      , ExternalPackageState
      , ModSummary)
- 
+
 createModuleInfo ::
      ModuleDependencies -- ^ Modules that have already been indexed
   -> ModuleGhcData -- ^ Data types from GHC
@@ -156,7 +156,7 @@ createModuleInfo (fileMap, defSiteMap, moduleNameMap) (flags, typecheckedModule,
       currentModuleTyThings = typeEnvElts $ tcg_type_env tcGblEnv
       homePackageTyThings =
         concatMap (typeEnvElts . md_types . hm_details) $
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)        
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
         eltsUDFM homePackageTable
 #else
         eltsUFM homePackageTable
@@ -182,7 +182,7 @@ createModuleInfo (fileMap, defSiteMap, moduleNameMap) (flags, typecheckedModule,
           currentPackageId
           compId
           defSiteMap
-          fileMap          
+          fileMap
           globalRdrEnv
           transformation
           modInfo
@@ -316,7 +316,7 @@ createDefinitionSiteMap ::
   -> HCE.SourceCodeTransformation
   -> ModuleInfo
   -> [Name]
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)  
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
   -> HsGroup GhcRn
 #else
   -> HsGroup Name
@@ -345,11 +345,11 @@ createDefinitionSiteMap flags currentPackageId compId defSiteMap fileMap globalR
         mapMaybe
           (\(L _n decl, docs) ->
              case decl of
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)               
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
                InstD _ (ClsInstD _ inst) -> Just (clsInstDeclSrcSpan inst, docs)
-#else  
+#else
                InstD (ClsInstD inst) -> Just (clsInstDeclSrcSpan inst, docs)
-#endif  
+#endif
                _ -> Nothing) $
         instanceDeclsWithDocs
       nameLocation :: Maybe SrcSpan -> Name -> HCE.LocationInfo
@@ -432,7 +432,7 @@ createDefinitionSiteMap flags currentPackageId compId defSiteMap fileMap globalR
       , map (\(n, _, _) -> n) allNamesWithDocumentation)
 
 occNameToHtml ::
-     DynFlags  
+     DynFlags
   -> HCE.PackageId
   -> HCE.ComponentId
   -> (ModuleName, OccName)
@@ -468,7 +468,7 @@ nameToHtml flags packageId compId transformation files defSiteMap name =
           name
    in H.span H.! H.dataAttribute "location" location H.! A.class_ "link" $
       H.toHtml (nameToText name)
-  
+
 docWithNamesToHtml ::
      DynFlags
   -> HCE.PackageId
@@ -485,7 +485,7 @@ docWithNamesToHtml flags packageId compId transformation fileMap defSiteMap =
 
 createDeclarations ::
      DynFlags
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)           
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
   -> HsGroup GhcRn
 #else
   -> HsGroup Name
@@ -507,9 +507,9 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
           Nothing -> Nothing
       -- | Top-level functions
       --------------------------------------------------------------------------------
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0) 
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
       valToDeclarations :: GenLocated SrcSpan (HsBindLR GhcRn GhcRn) -> [HCE.Declaration]
-#endif                           
+#endif
       valToDeclarations (L loc bind) =
         map
           (\name ->
@@ -523,9 +523,9 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
       vals = concatMap valToDeclarations $ hsGroupVals hsGroup
       -- | Data, newtype, type, type family, data family or class declaration
       --------------------------------------------------------------------------------
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)            
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
       tyClToDeclaration :: GenLocated SrcSpan (TyClDecl GhcRn) -> HCE.Declaration
-#endif                           
+#endif
       tyClToDeclaration (L loc tyClDecl) =
         HCE.Declaration
           HCE.TyClD
@@ -539,9 +539,9 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
         hsGroup
       -- | Instances
       --------------------------------------------------------------------------------
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)                    
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
       instToDeclaration :: GenLocated SrcSpan (InstDecl GhcRn) -> HCE.Declaration
-#endif                           
+#endif
       instToDeclaration (L loc inst) =
         HCE.Declaration
           HCE.InstD
@@ -550,7 +550,7 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
           True
           (lineNumber loc)
       insts =
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)        
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
         map instToDeclaration . filter (isGoodSrcSpan . getLoc) . hsGroupInstDecls $
 #else
         map instToDeclaration . filter (isGoodSrcSpan . getLoc) . hs_instds $
@@ -558,10 +558,10 @@ createDeclarations flags hsGroup typeEnv exportedSet transformation =
         hsGroup
       -- | Foreign functions
       --------------------------------------------------------------------------------
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)                            
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
       foreignFunToDeclaration ::
            GenLocated SrcSpan (ForeignDecl GhcRn) -> HCE.Declaration
-#endif           
+#endif
       foreignFunToDeclaration (L loc fd) =
         let name = unLoc $ fd_name fd
          in HCE.Declaration
@@ -590,14 +590,14 @@ foldAST environment typecheckedModule =
       --     - type signatures
       --     - type/data/newtype declarations
       --     - class declarations
-      
+
       -- Both typechecked source and renamed source are used to populate
       -- 'IdentifierInfoMap' and 'IdentifierOccurrenceMap'
       (idInfoMap, idOccMap) =
         L.foldl'
           (addIdentifierToMaps environment astStateIdSrcSpanMap)
           (HM.empty, astStateIdOccMap)
-          (namesFromRenamedSource renamed)          
+          (namesFromRenamedSource renamed)
       flags = envDynFlags environment
       packageId = envPackageId environment
       compId = envComponentId environment
@@ -619,7 +619,7 @@ foldAST environment typecheckedModule =
         case mbExported of
           Just lieNames ->
             mapMaybe
-#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)            
+#if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
               (\(L span ie,_) ->
 #else
               (\(L span ie) ->
@@ -733,7 +733,7 @@ addIdentifierToMaps environment idSrcSpanMap idMaps@(idInfoMap, idOccMap) nameOc
                   lineNumber
                   startCol
                   endCol
-              Nothing -> idMaps             
+              Nothing -> idMaps
 addIdentifierToMaps _ _ idMaps _ = idMaps
 
 addNameToMaps ::
@@ -791,7 +791,7 @@ lookupIdByNameOccurrence ::
   -> NameOccurrence
   -> Maybe (Id, Maybe (Type, [Type]))
 lookupIdByNameOccurrence environment idSrcSpanMap (NameOccurrence (L span mbName) _ _) =
-  case M.lookup span idSrcSpanMap of    
+  case M.lookup span idSrcSpanMap of
     Just (identifier, mbTypes) -> Just (identifier, mbTypes)
     Nothing ->
       case mbName of
@@ -806,7 +806,7 @@ lookupIdByNameOccurrence environment idSrcSpanMap (NameOccurrence (L span mbName
                 Nothing -> Nothing
         Nothing -> Nothing
 lookupIdByNameOccurrence _ _ TyLitOccurrence {..} = Nothing
-      
+
 updateIdMap ::
      Environment
   -> [(Id, Maybe Name)]

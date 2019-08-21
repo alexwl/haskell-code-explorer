@@ -9,7 +9,7 @@
 -- A common config might be:
 --   -- all local packages
 --   optimization: 0
---   
+--
 --   -- always build dependencies with highest optimization
 --   package *
 --     optimization: 2

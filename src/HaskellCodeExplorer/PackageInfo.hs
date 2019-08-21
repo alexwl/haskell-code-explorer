@@ -54,7 +54,7 @@ import Distribution.Helper
   , packageId
   , runQuery
   , sourceDirs
-  , compilerVersion  
+  , compilerVersion
   )
 import DynFlags
   ( DynFlags(..)
@@ -86,7 +86,7 @@ import GHC
   , topSortModuleGraph
   , typecheckModule
   , moduleNameString
-  , moduleName  
+  , moduleName
   )
 import GHC.Paths (libdir)
 import GhcMonad (GhcT(..), liftIO)
@@ -98,7 +98,7 @@ import Outputable (PprStyle, SDoc, neverQualify, showSDocForUser)
 import Packages (initPackages)
 import Prelude hiding (id)
 import System.Directory
-  ( doesFileExist  
+  ( doesFileExist
   , findExecutable
   , setCurrentDirectory
   , getCurrentDirectory
@@ -116,7 +116,7 @@ import System.FilePath
   , takeExtension
   , takeBaseName
   , takeDirectory
-  , splitDirectories  
+  , splitDirectories
   )
 import System.FilePath.Find (find,always,(==?),fileName)
 import System.Process (readProcess)
@@ -158,7 +158,7 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
          [ "GHC version mismatch. haskell-code-indexer: "
          , T.pack $ showVersion ghcVersion
          , ", package: "
-         , T.pack $ showVersion packageCompilerVersion         
+         , T.pack $ showVersion packageCompilerVersion
          ]
        liftIO exitFailure
   logInfoN $ T.append "Indexing " $ HCE.packageIdToText currentPackageId
@@ -270,10 +270,10 @@ ghcVersion = makeVersion [8, 6, 5, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,6,4,0)
 ghcVersion :: Version
 ghcVersion = makeVersion [8, 6, 4, 0]
-#elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)     
+#elif MIN_VERSION_GLASGOW_HASKELL(8,6,3,0)
 ghcVersion :: Version
 ghcVersion = makeVersion [8, 6, 3, 0]
-#elif MIN_VERSION_GLASGOW_HASKELL(8,4,4,0) 
+#elif MIN_VERSION_GLASGOW_HASKELL(8,4,4,0)
 ghcVersion :: Version
 ghcVersion = makeVersion [8, 4, 4, 0]
 #elif MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
@@ -286,7 +286,7 @@ ghcVersion = makeVersion [8, 2, 2, 0]
 ghcVersion :: Version
 ghcVersion = makeVersion [8, 0, 2, 0]
 #endif
-      
+
 buildDirectoryTree :: FilePath -> [FilePath] -> (FilePath -> Bool) -> IO HCE.DirTree
 buildDirectoryTree path ignoreDirectories isHaskellModule = do
   (_dir DT.:/ tree) <- DT.readDirectoryWith (const . return $ ()) path
@@ -316,7 +316,7 @@ buildDirectoryTree path ignoreDirectories isHaskellModule = do
       HCE.File name filePath (isHaskellModule filePath)
     toDirTree (DT.Failed name err) =
       HCE.File (name ++ " : " ++ show err) "" False
-        
+
 addTopLevelIdentifiersFromModule ::
      HCE.Trie Char HCE.ExternalIdentifierInfo
   -> HCE.ModuleInfo
@@ -327,8 +327,8 @@ addTopLevelIdentifiersFromModule trieIdInfo HCE.ModuleInfo {..} =
        HCE.insertToTrie S.insert (T.unpack demangledOccName) idInfo trie)
     trieIdInfo
     externalIds
-  
-addReferencesFromModule ::     
+
+addReferencesFromModule ::
      HM.HashMap HCE.ExternalId (S.Set HCE.IdentifierSrcSpan)
   -> HCE.ModuleInfo
   -> HM.HashMap HCE.ExternalId (S.Set HCE.IdentifierSrcSpan)
@@ -406,7 +406,7 @@ findDistDirectory packagePath = do
           Left $
           "Found multiple possible dist directories : \n" ++
           show setupConfigPaths ++ " \nPlease specify --dist option"
-          
+
 eachIdentifierOccurrence ::
      forall a.
      a
@@ -450,7 +450,7 @@ ghandleSync onError =
        case fromException ex of
          Just (asyncEx :: SomeAsyncException) -> throw asyncEx
          _ -> onError ex)
-    
+
 indexBuildComponent ::
      HCE.SourceCodePreprocessing -- ^ Before or after preprocessor
   -> HCE.PackageId -- ^ Current package id
@@ -588,7 +588,7 @@ indexBuildComponent sourceCodePreprocessing currentPackageId componentId deps@(f
                return (indexedModules, (fileMap', defSiteMap', modNameMap')))
         ([], (fileMap, defSiteMap, modNameMap))
         modSumWithPath
-          
+
 findHaskellModulePath ::
      FilePath -> [FilePath] -> ModSummary -> IO (Maybe HCE.HaskellModulePath)
 findHaskellModulePath buildDir srcDirs modSum =
@@ -603,7 +603,7 @@ findHaskellModulePath buildDir srcDirs modSum =
                   else path
               _ -> path
        in case removeTmpDir <$> L.stripPrefix buildDir modulePath of
-            -- File is in the build directory        
+            -- File is in the build directory
             Just path
               | takeExtension path == ".hs-boot" -> do
                 let possiblePaths = path : map (</> path) srcDirs

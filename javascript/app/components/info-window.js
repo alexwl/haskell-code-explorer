@@ -8,27 +8,27 @@ function updatePosition(component) {
   if(targetElement) {
     const infoWindowHeight = component.element.offsetHeight;
     const targetElementHeight = targetElement.offsetHeight;
-    
-    const parent = targetElement.parentNode;//<td> element    
-    const containerElement = document.querySelector("#" + component.get('containerElementId'));    
+
+    const parent = targetElement.parentNode;//<td> element
+    const containerElement = document.querySelector("#" + component.get('containerElementId'));
 
     //getBoundingClientRect() returns the smallest rectangle which contains
     //the entire element, with read-only left, top, right, bottom, x, y, width,
     //and height properties describing the overall border-box in pixels. Properties
     //other than width and height are relative to the top-left of the *viewport*.
     const targetTopViewport = targetElement.getBoundingClientRect().top;
-    
+
     let containerTopViewport;
     if (containerElement) {
       containerTopViewport = containerElement.getBoundingClientRect().top;
     } else {
       containerTopViewport = 0;
     }
-    
+
     let infoWindowTop;
     if(targetTopViewport < infoWindowHeight + containerTopViewport) {
       //offsetTop is the number of pixels from the top of the closest relatively
-      //positioned parent element.      
+      //positioned parent element.
       infoWindowTop = targetElement.offsetTop + parent.offsetTop
         + targetElementHeight + 10 + "px";
     } else {
@@ -37,7 +37,7 @@ function updatePosition(component) {
     }
 
     const infoWindowLeft = targetElement.offsetLeft + parent.offsetLeft + "px";
-    
+
     component.$().css({
       top:infoWindowTop,
       left:infoWindowLeft
@@ -54,16 +54,16 @@ export default Ember.Component.extend({
   isFocused: false,
   didInsertElement () {
     const component = this;
-    
+
     const $headerElement = Ember.$(component.element.querySelector(".info-window-header"));
     const $contentElement = Ember.$(component.element.querySelector(".info-window-content"));
     const $infoWindowElement = Ember.$(component.element.querySelector(".info-window"));
     const $infoWindowContainerElement = Ember.$(component.element);
-    
-    this.$headerElement = $headerElement;
-    this.$contentElement = $contentElement;    
 
-    this.$().resizable({    
+    this.$headerElement = $headerElement;
+    this.$contentElement = $contentElement;
+
+    this.$().resizable({
       handles: "n,w",
       minHeight: 80,
       minWidth: 400,
@@ -74,10 +74,10 @@ export default Ember.Component.extend({
         resizing = false;
       },
       resize : function() {
-        const containerHeight = $infoWindowContainerElement.height();               
+        const containerHeight = $infoWindowContainerElement.height();
         $infoWindowElement.css({
           "height": containerHeight + 2 + "px"
-        });        
+        });
         $contentElement.css({
           "max-height":(containerHeight - $headerElement.outerHeight(true)) + "px"
         });
@@ -104,7 +104,7 @@ export default Ember.Component.extend({
     const element = document.elementFromPoint(event.clientX,event.clientY);
     if(element && element.classList.contains('link')) {
       return;
-    }    
+    }
     if(!resizing
        && !dragging
        && !this.get('isPinned')
@@ -122,7 +122,7 @@ export default Ember.Component.extend({
     if (this.get('isPinned')
         || this.get('isFocused')
         || this.get('isHoveredOverIdentifier')
-        || this.get('hasSelectedExpression')) {      
+        || this.get('hasSelectedExpression')) {
       return false;
     } else {
       return true;

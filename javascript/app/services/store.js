@@ -44,7 +44,7 @@ function parseLinkHeader(header) {
 
 
 export default Ember.Service.extend({
-  init() {    
+  init() {
     this.packages = {};
     this.files = {};
     this.haskellModules = {};
@@ -69,12 +69,12 @@ export default Ember.Service.extend({
   },
   loadFile(packageId,filePath) {
     const fileId = packageId + "/" + filePath;
-    const file = this.files[fileId];    
+    const file = this.files[fileId];
     if(file) {
       return new RSVP.Promise((resolve) => {resolve(file);});
     } else {
-      const url = urls.fileUrl(packageId,filePath);      
-      return Ember.$.get({url:url,dataType:"text"}).then((text) => {        
+      const url = urls.fileUrl(packageId,filePath);
+      return Ember.$.get({url:url,dataType:"text"}).then((text) => {
         const file = {};
         file.text = text;
         file.packageId = packageId;
@@ -85,7 +85,7 @@ export default Ember.Service.extend({
       });
     }
   },
-  loadHaskellModule(packageId,filePath) {    
+  loadHaskellModule(packageId,filePath) {
     const moduleId = packageId + "/" + filePath ;
     const module = this.haskellModules[moduleId];
     if(module) {
@@ -93,7 +93,7 @@ export default Ember.Service.extend({
     } else {
       const url = urls.haskellModuleUrl(packageId,filePath);
       return Ember.$.getJSON(url).then((module) => {
-        module.packageId = packageId;        
+        module.packageId = packageId;
         module.isHaskellModule = true;
         this.haskellModules[moduleId] = module;
         return module;
@@ -112,23 +112,23 @@ export default Ember.Service.extend({
         return definitionSite;
       });
     }
-  },  
+  },
   loadExpressions(packageId,modulePath,lineStart,columnStart,lineEnd,columnEnd) {
     const id = packageId + "/" + encodeURIComponent(modulePath)
           + "/" + lineStart + "/" + columnStart + "/" + lineEnd + "/" + columnEnd;
     const exprs = this.expressions[id];
     if(exprs) {
-      return new RSVP.Promise((resolve)=>{resolve(exprs);}); 
+      return new RSVP.Promise((resolve)=>{resolve(exprs);});
     } else {
-      const url = urls.expressionsUrl(packageId,modulePath,lineStart,columnStart,lineEnd,columnEnd);      
-      return Ember.$.getJSON(url).then((exprs) => {        
+      const url = urls.expressionsUrl(packageId,modulePath,lineStart,columnStart,lineEnd,columnEnd);
+      return Ember.$.getJSON(url).then((exprs) => {
         this.expressions[id] = exprs;
         return exprs;
-      });     
+      });
     }
   },
-  loadFromUrlPaginated(url) {      
-    return Ember.$.getJSON(url).then((items,textStatus,jqXHR) => {      
+  loadFromUrlPaginated(url) {
+    return Ember.$.getJSON(url).then((items,textStatus,jqXHR) => {
       const linkHeaderText = jqXHR.getResponseHeader('Link');
       const totalCountHeaderText = jqXHR.getResponseHeader('x-total-count');
       const linkHeader = parseLinkHeader(linkHeaderText);
@@ -141,7 +141,7 @@ export default Ember.Service.extend({
     });
   },
   loadGlobalReferences(externalId) {
-    const globalReferences = this.globalReferences[externalId];    
+    const globalReferences = this.globalReferences[externalId];
     if(globalReferences) {
       return new RSVP.Promise((resolve) => {resolve(globalReferences);});
     } else {

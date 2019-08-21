@@ -25,10 +25,10 @@ function openUrl(buttonId,url) {
   return false;
 }
 
-function saveCurrentLocation(currentLineNumber) {  
+function saveCurrentLocation(currentLineNumber) {
   if(currentLineNumber) {
-    const url = window.location.origin + window.location.pathname + "#L" + currentLineNumber;    
-    if(location.href != url) {      
+    const url = window.location.origin + window.location.pathname + "#L" + currentLineNumber;
+    if(location.href != url) {
       window.location.hash = "#L" + currentLineNumber;
     }
   }
@@ -43,7 +43,7 @@ function goToDefinition(store,locationInfo,buttonId,currentLineNumber) {
     openUrl(buttonId,url);
   } else if((locationInfo.tag === "ApproximateLocation") &&
             (locationInfo.moduleName.indexOf("Paths_") !== 0)) {
-    const packageId = locationInfo.packageId.name+"-"+locationInfo.packageId.version;    
+    const packageId = locationInfo.packageId.name+"-"+locationInfo.packageId.version;
     if(locationInfo.entity === "Mod") {
       store.loadDefinitionSite(packageId,
                                locationInfo.moduleName,
@@ -55,7 +55,7 @@ function goToDefinition(store,locationInfo,buttonId,currentLineNumber) {
           openUrl(buttonId,"/package/" + packageId + "/show/" + defSite.location.modulePath);
         }).catch(() => {
           openUrl(buttonId,hackageUrl(packageId,locationInfo));
-        });      
+        });
     } else {
     store.loadDefinitionSite(packageId,
                             locationInfo.moduleName,
@@ -78,10 +78,10 @@ function goToDefinition(store,locationInfo,buttonId,currentLineNumber) {
         saveCurrentLocation(currentLineNumber);
         openUrl(buttonId,hackageUrl(packageId,locationInfo));
       });
-    }    
+    }
   } else {
     alert('No location info');
-  }  
+  }
 }
 
 export {

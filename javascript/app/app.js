@@ -6,7 +6,7 @@ import config from './config/environment';
 var App;
 
 App = Ember.Application.extend({
-  modulePrefix: config.modulePrefix,  
+  modulePrefix: config.modulePrefix,
   Resolver: Resolver
 });
 

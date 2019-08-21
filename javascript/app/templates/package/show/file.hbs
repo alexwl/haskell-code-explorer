@@ -1,11 +1,11 @@
-{{#if model.isHaskellModule}} 
+{{#if model.isHaskellModule}}
     {{haskell-module
       path=model.id
       name=model.name
       packageId=model.packageId
       componentId=model.componentId
       html=model.sourceCodeHtml
-      identifiers=model.identifiers      
+      identifiers=model.identifiers
       occurrences=model.occurrences
       colorTheme=settings.colorTheme
       declarations=model.declarations

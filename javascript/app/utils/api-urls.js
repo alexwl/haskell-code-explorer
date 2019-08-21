@@ -15,13 +15,13 @@ function fixDots(string) {
   }
 }
 
-export const urls = {  
+export const urls = {
   packageInfoUrl : function(packageId) {
     return config.APP.staticUrlPrefix+"/"+packageId+"/"+config.APP.haskellCodeExplorerDirectory+"/packageInfo.json";
   },
   fileUrl : function(packageId,filePath) {
     return config.APP.staticUrlPrefix+"/"+packageId+"/"+filePath;
-  },  
+  },
   haskellModuleUrl : function (packageId,filePath) {
     return config.APP.staticUrlPrefix+"/"+packageId+"/"+config.APP.haskellCodeExplorerDirectory+"/"+encodeURIComponent(encodeURIComponent(filePath))+ ".json";
   },

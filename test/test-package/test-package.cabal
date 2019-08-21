@@ -26,8 +26,8 @@ test-suite test-package-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   hs-source-dirs:
-      test  
+      test
   build-depends:
       base >=4.7 && <5
-    , test-package  
+    , test-package
   default-language: Haskell2010

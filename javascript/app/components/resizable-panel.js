@@ -24,7 +24,7 @@ export default Ember.Component.extend({
   hidden:false,
   hiddenByUser:false,
   didInsertElement : function () {
-    this._super(...arguments);    
+    this._super(...arguments);
     Ember.run.next(this,() => {
       const onresize = () => {
         if(!this.get('hiddenByUser')) {
@@ -50,7 +50,7 @@ export default Ember.Component.extend({
         }
       });
       this.$alsoResizeElement = $alsoResizeElement;
-      if(window.innerWidth < 700) {      
+      if(window.innerWidth < 700) {
         this.set('hidden',true);
         hide(this,false);
       }

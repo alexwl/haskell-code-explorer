@@ -8,10 +8,10 @@ function loadItems(store,component,url) {
       component.set('next',result.linkHeader.next);
       component.set('prev',result.linkHeader.prev);
       component.set('last',result.linkHeader.last);
-      
+
       const pageMatch = url.match(/(&|\?)page=(\d+)/);
       const perPageMatch = url.match(/(&|\?)per_page=(\d+)/);
-      
+
       const page = pageMatch ? pageMatch[2] : 1;
       const perPage = perPageMatch ? perPageMatch[2] : 20;
 
@@ -36,11 +36,11 @@ export default Ember.Component.extend({
     }
   },
   urlObserver : Ember.observer('url',function () {
-    loadItems(this.get('store'),this,this.get('url'));    
-    this.element.querySelector(".paginated-list-content").scrollTop = 0;    
+    loadItems(this.get('store'),this,this.get('url'));
+    this.element.querySelector(".paginated-list-content").scrollTop = 0;
   }),
   actions : {
-    update(url) {      
+    update(url) {
       this.element.querySelector(".paginated-list-content").scrollTop = 0;
       loadItems(this.get('store'),this,url);
     }

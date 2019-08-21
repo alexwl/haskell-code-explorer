@@ -45,14 +45,14 @@ li {
 .documentation {
     margin-top:10px;
     li {
-        list-style: disc outside none;                
+        list-style: disc outside none;
     }
     ul {
         padding-left:15px;
     }
     ol {
         padding-left:15px;
-    }    
+    }
 }
 
 .flex-container {
@@ -73,7 +73,7 @@ li {
 .header {
     flex: none;
     padding:5px;
-    img {        
+    img {
         float:left;
     }
 }
@@ -140,7 +140,7 @@ li {
     margin-top:20px;
 }
 
-.package-header-filename {    
+.package-header-filename {
     white-space: nowrap;
     margin-left: 35px;
 }
@@ -184,13 +184,13 @@ ul.modules {
     position:absolute;
     top:0px;
     right:-20px;
-    z-index:2;    
+    z-index:2;
     width:20px;
-    height:20px;    
+    height:20px;
     text-align:center;
     vertical-align:middle;
     a {
-        text-decoration:none;        
+        text-decoration:none;
     }
     opacity:0.6;
     display:none;
@@ -218,10 +218,10 @@ ul.modules {
     right : 0;
     left : 300px;
     overflow-x: auto;
-    overflow-y: auto;    
+    overflow-y: auto;
 }
 
-.file-tree-container { 
+.file-tree-container {
     overflow-x: hidden;
     overflow-y: auto;
     position: absolute;
@@ -238,7 +238,7 @@ ul.modules {
     right : 0;
     left : 0;
     overflow-x: auto;
-    overflow-y: auto;    
+    overflow-y: auto;
 }
 
 .bottom-panel {
@@ -248,7 +248,7 @@ ul.modules {
     right : 0;
     left : 0;
     overflow-x: auto;
-    overflow-y: auto;    
+    overflow-y: auto;
     z-index:4;
 }
 
@@ -258,7 +258,7 @@ ul.modules {
     right : 0;
     left : 0;
     height: 35px;
-    padding: 5px;    
+    padding: 5px;
 }
 
 .bottom-panel-content {
@@ -268,7 +268,7 @@ ul.modules {
     right : 0;
     left : 0;
     overflow-x: auto;
-    overflow-y: auto;    
+    overflow-y: auto;
 }
 
 .bottom-panel-header-options {
@@ -279,9 +279,9 @@ ul.modules {
     white-space:nowrap;
 }
 
-.highlighted-identifier {    
+.highlighted-identifier {
     border-radius: 3px;
-    box-shadow: 0 0 0 1px #B4B4B4;    
+    box-shadow: 0 0 0 1px #B4B4B4;
 }
 
 .identifier {
@@ -312,7 +312,7 @@ td.line-content {
 
 $source-code-font:Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
 
-.source-code {    
+.source-code {
     font-family: $source-code-font;
     white-space:pre;
     line-height:1.25;
@@ -332,12 +332,12 @@ code,pre {
 }
 
 .source-code-font {
-    font-family: $source-code-font;    
+    font-family: $source-code-font;
     line-height:1.25;
 }
 
 .source-code-snippet {
-    padding: 4px;    
+    padding: 4px;
     text-decoration:none !important;
     display:block;
 }
@@ -360,7 +360,7 @@ code,pre {
     position:fixed;
     top:150px;
     right:15px;
-    width: 450px;    
+    width: 450px;
     z-index:1;
     div {
         margin : 5px;
@@ -369,7 +369,7 @@ code,pre {
 
 .declarations-header {
     opacity:0.9;
-    height:50px; 
+    height:50px;
 }
 
 .declarations-content {
@@ -380,7 +380,7 @@ code,pre {
     right:0px;
     max-height:500px;
     overflow-y:auto;
-    overflow-x:hidden;    
+    overflow-x:hidden;
 }
 
 @media screen and (max-width: 1500px)  {
@@ -395,28 +395,28 @@ code,pre {
     z-index:10;
 }
 
-.info-window-header {    
+.info-window-header {
     margin:5px;
     width: 100%;
     cursor: move;
     cursor: grab;
     cursor: -moz-grab;
-    cursor: -webkit-grab;    
+    cursor: -webkit-grab;
 }
 
-.info-window-content {    
+.info-window-content {
     max-height:200px;
     overflow-x:auto;
-    overflow-y:auto;    
+    overflow-y:auto;
 }
 
 .info-window-options {
     margin-right:10px;
     margin-left:10px;
-    float:right;    
+    float:right;
 }
 
-           
+
 .ui-draggable-dragging .info-window-header {
     cursor: grabbing;
     cursor: -moz-grabbing;

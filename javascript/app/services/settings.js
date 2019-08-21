@@ -14,7 +14,7 @@ export default Ember.Service.extend({
   },
   colorTheme : themes["darkTheme"],
   settingsObserver : Ember.observer("colorTheme",function() {
-    if(localStorage) {      
+    if(localStorage) {
       localStorage.setItem("colorThemeId",this.get('colorTheme').id);
     }
   })

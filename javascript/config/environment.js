@@ -19,7 +19,7 @@ module.exports = function(environment) {
     },
     pace: {
       theme: 'minimal',
-      color: 'silver',      
+      color: 'silver',
       target: 'body',
       elements: {
         checkInterval: 100,

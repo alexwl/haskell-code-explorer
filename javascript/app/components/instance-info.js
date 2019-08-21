@@ -10,7 +10,7 @@ export default Ember.Component.extend({
     return this.get('nestedLevel') + 1;
   }),
   actions : {
-    goToDefinition (event) {      
+    goToDefinition (event) {
       goToDefinition(this.get('store'),
                      this.get('instance.location'),
                      event.which,

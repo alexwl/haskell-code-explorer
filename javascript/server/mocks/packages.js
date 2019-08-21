@@ -380,15 +380,15 @@ const testModuleInfo = {
 module.exports = function(app) {
   const express = require('express');
   let packagesRouter = express.Router();
-  
-  packagesRouter.get('/api/packages', function(req, res) {    
+
+  packagesRouter.get('/api/packages', function(req, res) {
     res.send(packages);
-  });  
-  
+  });
+
   packagesRouter.get('/files/test-package-0.1.0.0/.haskell-code-explorer/packageInfo.json', function(req, res) {
     res.send(testPackage);
   });
-  
+
   packagesRouter.get('/files/test-package-0.1.0.0/.haskell-code-explorer/app%252FMain.hs.json', function(req, res) {
     res.send(testModuleInfo);
   });

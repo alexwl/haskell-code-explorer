@@ -1,7 +1,7 @@
 import Ember from 'ember';
 import {goToDefinition} from '../utils/go-to-definition';
 
-export default Ember.Component.extend({  
+export default Ember.Component.extend({
   store : Ember.inject.service('store'),
   downloadedDocumentation : null,
   didInsertElement () {
@@ -26,25 +26,25 @@ export default Ember.Component.extend({
       this.element.removeEventListener('mouseup',this._onmouseup);
     }
   },
-  //Naughty record selectors : 
+  //Naughty record selectors :
   //https://github.com/ghc/ghc/blob/ced2cb5e8fbf4493488d1c336da7b00d174923ce/compiler/typecheck/TcTyDecls.hs#L940-L961
   isNaughtyRecSel : Ember.computed('identifierInfo',function () {
     const idInfo = this.get('identifierInfo');
-    return idInfo ? (idInfo.details === "RecSelIdNaughty") : false;   
+    return idInfo ? (idInfo.details === "RecSelIdNaughty") : false;
   }),
   isExternalIdentifier : Ember.computed('identifierInfo',function () {
     const idInfo = this.get('identifierInfo');
-    return idInfo ? (idInfo.sort === "External") : false; 
+    return idInfo ? (idInfo.sort === "External") : false;
   }),
   identifierObserver : Ember.observer('identifierInfo',function () {
     this.set("downloadedDocumentation","");
     const idInfo = this.get('identifierInfo');
-    if(idInfo) {      
+    if(idInfo) {
       const locationInfo = idInfo.locationInfo;
       if(locationInfo.tag === "ApproximateLocation") {
         const packageId = locationInfo.packageId.name + "-" + locationInfo.packageId.version;
         const currentIdentifier = idInfo;
-        
+
         this.get('store').loadDefinitionSite(packageId,
                                              locationInfo.moduleName,
                                              locationInfo.componentId,
@@ -52,10 +52,10 @@ export default Ember.Component.extend({
                                              locationInfo.name)
           .then((definitionSite) => {
             Ember.run.next(this,() => {
-              if(currentIdentifier === this.get('identifierInfo')) {                
+              if(currentIdentifier === this.get('identifierInfo')) {
                 this.set('downloadedDocumentation',definitionSite.documentation);
               }})
-          }).catch(() => {            
+          }).catch(() => {
             this.get('store').loadHoogleDocs(packageId,
                                              locationInfo.moduleName,
                                              locationInfo.entity,

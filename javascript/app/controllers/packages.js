@@ -3,10 +3,10 @@ import {goToDefinition} from '../utils/go-to-definition';
 
 export default Ember.Controller.extend({
   store : Ember.inject.service('store'),
-  queryObserver : Ember.observer("query",function() {    
+  queryObserver : Ember.observer("query",function() {
     Ember.run.debounce(this, () => {
       const regExp = new RegExp(this.get('query'),"i");
-      const packages = this.get('model').filter((p) => p.name.search(regExp) != -1);      
+      const packages = this.get('model').filter((p) => p.name.search(regExp) != -1);
       Ember.run.next(() => {
         this.set('packages',packages);
       });

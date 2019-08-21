@@ -106,7 +106,7 @@ packageInfoSpec currentDir = do
         Just modInfo -> moduleInfoSpec modInfo
         Nothing -> return ()
     Left e -> runIO $ putStrLn e >> return ()
-  
+
 moduleInfoSpec :: ModuleInfo -> Spec
 moduleInfoSpec modInfo =
   describe "createModuleInfo" $ do
@@ -136,7 +136,7 @@ moduleInfoSpec modInfo =
       HCE.source (modInfo :: HCE.ModuleInfo) `shouldBe` sourceCodeLines
     it "returns valid map of expressions" $
       HCE.exprInfoMap (modInfo :: HCE.ModuleInfo) `shouldBe` testExprInfoMap
-#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)      
+#if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
     it "returns valid map of identifiers " $
       let removeLocationInfo :: HCE.LocationInfo -> HCE.LocationInfo
           removeLocationInfo _ = HCE.UnknownLocation ""
@@ -148,9 +148,9 @@ moduleInfoSpec modInfo =
             _ ->  extId
           cleanup :: HCE.IdentifierInfoMap -> HCE.IdentifierInfoMap
           cleanup = U.transformBi removeLocationInfo . U.transformBi removePackageVersionFromExternalId
-       in 
+       in
         cleanup (HCE.idInfoMap (modInfo :: HCE.ModuleInfo)) `shouldBe` cleanup testIdInfoMap
-#endif          
+#endif
     it "returns valid map of identifier occurrences" $
       HCE.idOccMap (modInfo :: HCE.ModuleInfo) `shouldBe` testIdOccMap
 
@@ -208,7 +208,7 @@ buildAndIndexTestPackage currentDir = do
     Nothing ->
       return . Left $
       "Cannot find stack executable. Stack executable is required to build the test package."
-    
+
 sourceCodeTransformationSpec :: FilePath -> Spec
 sourceCodeTransformationSpec currentDir = do
   sourceCodeAfterPreprocessor <-
@@ -258,12 +258,12 @@ sourceCodeTransformationSpec currentDir = do
        in fileIndex sourceCodeTransformation `shouldBe` index
   describe "fromOriginalLineNumber" $ do
     test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File.hs", 1) (Right 1)
-    test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File.hs", 4) (Right 4)    
+    test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File.hs", 4) (Right 4)
     test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File1.hs", 1) (Right 9)
     test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File1.hs", 2) (Right 10)
     test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File2.hs", 1) (Right 13)
     test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File2.hs", 3) (Right 15)
-    test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File2.hs", 5) (Right 17)    
+    test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File2.hs", 5) (Right 17)
     test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File1.hs", 15) (Right 19)
     test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File1.hs", 16) (Right 20)
     test fromOriginalLineNumber sourceCodeTransformation (HaskellFilePath "File3.hs", 1) (Right 27)
@@ -663,7 +663,7 @@ testIdOccMap =
               })
         ])
     ]
-  
+
 testIdInfoMap :: HM.HashMap InternalId IdentifierInfo
 testIdInfoMap =
   HM.fromList

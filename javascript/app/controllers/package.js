@@ -8,8 +8,8 @@ export default Ember.Controller.extend({
   loadItemsFunction : null,
   query : null,
   searchMode : "currentPackage",
-  createSearchUrlFunction : Ember.computed("searchMode","model",function() {    
-    const packageId = this.get('model.id');    
+  createSearchUrlFunction : Ember.computed("searchMode","model",function() {
+    const packageId = this.get('model.id');
     if(this.get('searchMode') === "currentPackage") {
       return (query) => urls.identifierSearchUrl(packageId,query);
     } else {

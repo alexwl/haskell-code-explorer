@@ -36,7 +36,7 @@ import qualified Data.IntervalMap.Strict as IVM
 import qualified Data.List as L
 import Data.Maybe (fromMaybe, isJust)
 import Data.Serialize (Get, Serialize(..))
-import qualified Data.Set as S      
+import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Text.Lazy (toStrict)
@@ -51,8 +51,8 @@ import Documentation.Haddock.Types
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
   , Table(..)
   , TableCell(..)
-  , TableRow(..)  
-#endif    
+  , TableRow(..)
+#endif
   )
 import GHC.Generics (Generic)
 import Prelude hiding (id)
@@ -185,7 +185,7 @@ data ModuleInfo = ModuleInfo
     -- ^ Information about each identifier in the module
   , declarations :: [Declaration]
   , definitionSiteMap :: DefinitionSiteMap
-    -- ^ Definition site of each top-level value, type, and type class instance    
+    -- ^ Definition site of each top-level value, type, and type class instance
   , externalIds :: [ExternalIdentifierInfo]
   } deriving (Show, Eq, Generic, Data)
 
@@ -226,7 +226,7 @@ haskellPreprocessorExtensions =
 toCompactPackageInfo :: PackageInfo ModuleInfo -> PackageInfo CompactModuleInfo
 toCompactPackageInfo PackageInfo {..} =
   PackageInfo
-    { id = id    
+    { id = id
     , moduleMap = HM.map toCompactModuleInfo moduleMap
     , moduleNameMap = moduleNameMap
     , directoryTree = directoryTree
@@ -322,11 +322,11 @@ instance Ord ExternalIdentifierInfo where
         case compare (demangledOccName i1) (demangledOccName i2) of
           GT -> GT
           LT -> LT
-          EQ ->            
+          EQ ->
             compare
               (internalId (i1 :: IdentifierInfo))
               (internalId (i2 :: IdentifierInfo))
-        
+
 data ExpressionInfo = ExpressionInfo
   { description :: T.Text
   , exprType :: Maybe Type
@@ -372,7 +372,7 @@ data InstanceResolution =
   , types :: [Type]
   -- ^ Types at which type variables of a class are instantiated
   , location :: LocationInfo
-  , instances :: [InstanceResolution]  
+  , instances :: [InstanceResolution]
   }
   | Stop
   deriving (Show,Eq,Ord,Generic,Data)
@@ -426,7 +426,7 @@ fromOriginalLineNumber SourceCodeTransformation {fileIndex = index} (originalFil
         , " in "
         , T.pack $ show index
         ]
-        
+
 data Declaration = Declaration
   { sort :: DeclarationSort
   , name :: T.Text
@@ -563,7 +563,7 @@ instance NFData SourceCodeTransformation
 instance NFData IdentifierInfo
 instance NFData InternalId
 instance NFData ExternalId
-instance NFData ExternalIdentifierInfo 
+instance NFData ExternalIdentifierInfo
 instance NFData InstanceResolution
 instance NFData IdDetails
 instance NFData NameSpace
@@ -626,7 +626,7 @@ instance A.ToJSON ModuleInfo where
           , ("occurrences", A.toJSON $ idOccurrencesHashMap idOccMap)
           , ("declarations", A.toJSON declarations)
           ]
-          
+
 idOccurrencesHashMap ::
      IM.IntMap [((Int, Int), IdentifierOccurrence)]
   -> HM.HashMap T.Text IdentifierOccurrence
@@ -638,7 +638,7 @@ idOccurrencesHashMap =
          (\((startCol, endCol), occ) ->
             (occurrenceLocationToText lineNum startCol endCol, occ))
          occs) .
-  IM.toList 
+  IM.toList
 
 idOccurrenceList ::
      IM.IntMap [((Int, Int), IdentifierOccurrence)]
@@ -651,7 +651,7 @@ idOccurrenceList =
          (\((startCol, endCol), occ) ->
             (occurrenceLocationToText lineNum startCol endCol, occ))
          occs) .
-  IM.toList 
+  IM.toList
 
 occurrenceLocationToText :: Int -> Int -> Int -> T.Text
 occurrenceLocationToText lineNum startCol endCol =
@@ -710,7 +710,7 @@ tokenize
   -> [((Int, Int), a)] -- ^ Identifier locations
                        -- The end position is defined to be the column /after/ the end of the
                        -- span. That is, a span of (1,1)-(1,2) is one character long, and a
-                       -- span of (1,1)-(1,1) is zero characters long.                       
+                       -- span of (1,1)-(1,1) is zero characters long.
   -> [(T.Text, (Int, Int), Maybe a)]
 tokenize line =
   L.reverse .
@@ -807,14 +807,14 @@ docToHtml modToHtml idToHtml = toStrict . renderHtml . toH
        in Html.table $
           Html.thead (mapM_ (tableRowToH Html.th) hs) >>
           Html.tbody (mapM_ (tableRowToH Html.td) bs)
-#endif          
-        
+#endif
+
 instance A.ToJSON HaskellModuleName where
   toJSON (HaskellModuleName name) = A.String name
 instance A.ToJSON HaskellModulePath where
   toJSON (HaskellModulePath path) = A.String path
 instance A.ToJSON HaskellFilePath where
-  toJSON (HaskellFilePath path) = A.String path  
+  toJSON (HaskellFilePath path) = A.String path
 instance A.ToJSON LinePragma where
   toJSON = A.genericToJSON omitNothingOptions
 instance A.ToJSON FileLocation where
@@ -824,7 +824,7 @@ instance A.ToJSON IdentifierInfo where
 instance A.ToJSON InternalId where
   toJSON (InternalId text) = A.toJSON text
 instance A.ToJSON ExternalId where
-  toJSON (ExternalId text) = A.toJSON text    
+  toJSON (ExternalId text) = A.toJSON text
 instance A.ToJSON ExternalIdentifierInfo where
   toJSON (ExternalIdentifierInfo info) = A.toJSON info
 instance A.ToJSON InstanceResolution where
@@ -842,7 +842,7 @@ instance A.ToJSON IdDetails where
   toJSON = A.genericToJSON omitNothingOptions
 instance A.ToJSON NameSpace where
   toJSON = A.genericToJSON omitNothingOptions
-instance A.ToJSON Declaration  
+instance A.ToJSON Declaration
 instance A.ToJSON NameSort
 instance A.ToJSON OccName where
   toJSON (OccName name) = A.String name
@@ -870,7 +870,7 @@ instance A.ToJSON Type where
   toJSON = A.genericToJSON omitNothingOptions
 instance A.ToJSON ExpressionInfo where
   toJSON = A.genericToJSON omitNothingOptions
-instance A.ToJSON DirTree    
+instance A.ToJSON DirTree
 instance A.ToJSON DefinitionSite where
   toJSON = A.genericToJSON omitNothingOptions
 instance A.ToJSON IdentifierSrcSpan

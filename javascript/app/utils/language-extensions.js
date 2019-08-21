@@ -198,7 +198,7 @@ const extensions = {
   "InterruptibleFFI": {
     "description": "Enable interruptible FFI.",
     "link": "https://haskell.org/ghc/docs/latest/html/users_guide/ffi-chap.html#interruptible-foreign-calls"
-  },  
+  },
   "KindSignatures": {
     "description": "Allow an explicit kind signature giving the kind of types over which a type variable ranges.",
     "link": "https://www.haskell.org/ghc/docs/latest/html/users_guide/glasgow_exts.html#ghc-flag--XKindSignatures"
@@ -314,7 +314,7 @@ const extensions = {
   "PatternGuards": {
     "description": "Enable a form of guard which matches a pattern and binds variables.",
     "link": "https://www.haskell.org/ghc/docs/latest/html/users_guide/glasgow_exts.html#ghc-flag--XPatternGuards"
-  },  
+  },
   "PatternSynonyms": {
     "description": "Allow giving names to and abstracting over patterns.",
     "link": "https://www.haskell.org/ghc/docs/latest/html/users_guide/glasgow_exts.html#ghc-flag--XPatternSynonyms"
@@ -322,7 +322,7 @@ const extensions = {
   "PolyKinds": {
     "description": "Enable kind polymorphism.",
     "link": "https://www.haskell.org/ghc/docs/latest/html/users_guide/glasgow_exts.html#ghc-flag--XPolyKinds"
-  },  
+  },
   "PostfixOperators": {
     "description": "Relax the interpretation of left operator sections to allow unary postfix operators.",
     "link": "https://www.haskell.org/ghc/docs/latest/html/users_guide/glasgow_exts.html#ghc-flag--XPostfixOperators"
@@ -394,7 +394,7 @@ const extensions = {
   "StarIsType": {
     "description": "Have * refer to Type.",
     "link":"https://ghc.haskell.org/trac/ghc/wiki/Migration/8.6#StarIsType"
-    
+
   },
   "StaticPointers": {
     "description": "Enable support for 'static pointers' (and the static keyword) to refer to globally stable names, even across different programs.",
@@ -497,7 +497,7 @@ const extensions = {
 
 const regexp = new RegExp(Object.keys(extensions).join("|"),"g");
 
-function addLinksToLanguageExtensionsDocs(string) {  
+function addLinksToLanguageExtensionsDocs(string) {
   return string.replace(regexp, function(match) {
     const extension = extensions[match];
     if(extensions) {
