@@ -22,7 +22,7 @@ import Control.Exception
   , throw
   , try
   )
-import Control.Monad (foldM, unless)
+import Control.Monad (foldM, unless, when)
 import Control.Monad.Extra (anyM, findM)
 import Control.Monad.Logger
   ( LoggingT(..)
@@ -103,6 +103,7 @@ import System.Directory
   , setCurrentDirectory
   , getCurrentDirectory
   , makeAbsolute
+  , getDirectoryContents
   )
 import qualified System.Directory.Tree as DT
 import System.Exit (exitFailure)
@@ -114,6 +115,7 @@ import System.FilePath
   , replaceExtension
   , splitPath
   , takeExtension
+  , takeFileName
   , takeBaseName
   , takeDirectory
   , splitDirectories
@@ -141,6 +143,25 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
           Right distDir -> return distDir
           Left errorMessage ->
             logErrorN (T.pack errorMessage) >> liftIO exitFailure
+  cabalFiles <-
+    liftIO $
+    length .
+    filter
+      (\path -> takeFileName path /= ".cabal" && takeExtension path == ".cabal") <$>
+    getDirectoryContents packageDirectoryAbsPath
+  _ <-
+    if cabalFiles == 0
+      then do
+        logErrorN $
+          T.concat ["No .cabal file found in ", T.pack packageDirectoryAbsPath]
+        liftIO exitFailure
+      else when (cabalFiles >= 2) $ do
+             logErrorN $
+               T.concat
+                 [ "Found more than one .cabal file in "
+                 , T.pack packageDirectoryAbsPath
+                 ]
+             liftIO exitFailure
   let cabalHelperQueryEnv = mkQueryEnv packageDirectoryAbsPath distDir
   ((packageName, packageVersion), (_packageCompilerName, packageCompilerVersion), compInfo) <-
     liftIO $
@@ -154,13 +175,14 @@ createPackageInfo packageDirectoryPath mbDistDirRelativePath sourceCodePreproces
   unless
     (take 3 (versionBranch packageCompilerVersion) ==
      take 3 (versionBranch ghcVersion)) $ do
-       logErrorN $ T.concat
-         [ "GHC version mismatch. haskell-code-indexer: "
-         , T.pack $ showVersion ghcVersion
-         , ", package: "
-         , T.pack $ showVersion packageCompilerVersion
-         ]
-       liftIO exitFailure
+    logErrorN $
+      T.concat
+        [ "GHC version mismatch. haskell-code-indexer: "
+        , T.pack $ showVersion ghcVersion
+        , ", package: "
+        , T.pack $ showVersion packageCompilerVersion
+        ]
+    liftIO exitFailure
   logInfoN $ T.append "Indexing " $ HCE.packageIdToText currentPackageId
   let buildComponents =
         L.map
