@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE StrictData #-}
 
 module HaskellCodeExplorer.AST.TypecheckedSource
@@ -110,7 +111,16 @@ import InstEnv
   )
 import Name (Name, nameOccName, nameUnique)
 import Prelude hiding (span)
-import SrcLoc (GenLocated(..), SrcSpan(..), isGoodSrcSpan, isOneLineSpan, unLoc)
+import SrcLoc
+   ( GenLocated(..)
+   , SrcSpan(..)
+   , isGoodSrcSpan
+   , isOneLineSpan
+   , unLoc
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
+   , cL 
+#endif    
+   )
 import TcEvidence (HsWrapper(..))
 import TcHsSyn (conLikeResTy, hsLitType)
 import Type
@@ -682,7 +692,10 @@ foldLHsExpr (L span expr@(HsApp fun arg)) = do
   typ <- maybe (return Nothing) (funResultTySafe span "HsApp") funTy
   addExprInfo span typ "HsApp" (exprSort expr)
   return typ
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
+  
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
+foldLHsExpr (L span ex@(HsAppType _ expr _)) = do
+#elif MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
 foldLHsExpr (L span ex@(HsAppType _ expr)) = do
 #else
 foldLHsExpr (L _ (HsAppType _ _)) = return Nothing
@@ -856,7 +869,9 @@ foldLHsExpr (L span e@(RecordUpd expr binds cons _inputTys outTys _wrapper)) =
     _ <- foldLHsExpr expr
     mapM_ foldLHsRecUpdField binds
     return $ Just typ'
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
+foldLHsExpr (L span e@(ExprWithTySig _ expr _)) = do
+#elif MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
 foldLHsExpr (L span e@(ExprWithTySig _ expr)) = do
 #else
 foldLHsExpr (L _span (ExprWithTySig _expr _type)) = return Nothing
@@ -1422,22 +1437,22 @@ foldLPat :: LPat GhcTc -> State ASTState (Maybe Type)
 foldLPat :: LPat Id -> State ASTState (Maybe Type)
 #endif
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L _span (XPat _)) = return Nothing
-foldLPat (L _ (NPat _ (L _ (XOverLit _)) _ _)) = return Nothing
-foldLPat (L _ (NPlusKPat _ (L _ _) (L _ (XOverLit _)) _ _ _)) = return Nothing
-foldLPat (L span (VarPat _ (L _ identifier))) = do
+foldLPat (ghcDL -> L _span (XPat _)) = return Nothing
+foldLPat (ghcDL -> L _ (NPat _ (L _ (XOverLit _)) _ _)) = return Nothing
+foldLPat (ghcDL -> L _ (NPlusKPat _ (L _ _) (L _ (XOverLit _)) _ _ _)) = return Nothing
+foldLPat (ghcDL -> L span (VarPat _ (L _ identifier))) = do
 #else
-foldLPat (L span (VarPat (L _ identifier))) = do
+foldLPat (ghcDL -> L span (VarPat (L _ identifier))) = do
 #endif
   (identifier', _) <- tidyIdentifier identifier
   addIdentifierToIdSrcSpanMap span identifier' Nothing
   return . Just . varType $ identifier'
-foldLPat (L span pat@(WildPat typ)) = do
+foldLPat (ghcDL -> L span pat@(WildPat typ)) = do
   typ' <- tidyType typ
   addExprInfo span (Just typ') "WildPat" (patSort pat)
   return $ Just typ'
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span p@(LazyPat _ pat)) = do
+foldLPat (ghcDL -> L span p@(LazyPat _ pat)) = do
 #else
 foldLPat (L span p@(LazyPat pat)) = do
 #endif
@@ -1445,7 +1460,7 @@ foldLPat (L span p@(LazyPat pat)) = do
   addExprInfo span mbType "LazyPat" (patSort p)
   return mbType
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span p@(AsPat _ (L idSpan identifier) pat)) = do
+foldLPat (ghcDL -> L span p@(AsPat _ (L idSpan identifier) pat)) = do
 #else
 foldLPat (L span p@(AsPat (L idSpan identifier) pat)) = do
 #endif
@@ -1455,12 +1470,12 @@ foldLPat (L span p@(AsPat (L idSpan identifier) pat)) = do
   _ <- foldLPat pat
   return . Just . varType $ identifier'
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L _span (ParPat _ pat)) = foldLPat pat
+foldLPat (ghcDL -> L _span (ParPat _ pat)) = foldLPat pat
 #else
-foldLPat (L _span (ParPat pat)) = foldLPat pat
+foldLPat (ghcDL -> L _span (ParPat pat)) = foldLPat pat
 #endif
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span p@(BangPat _ pat)) = do
+foldLPat (ghcDL -> L span p@(BangPat _ pat)) = do
 #else
 foldLPat (L span p@(BangPat pat)) = do
 #endif
@@ -1468,7 +1483,7 @@ foldLPat (L span p@(BangPat pat)) = do
   addExprInfo span typ "BangPat" (patSort p)
   return typ
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span p@(ListPat (ListPatTc typ _) pats)) = do
+foldLPat (ghcDL -> L span p@(ListPat (ListPatTc typ _) pats)) = do
 #else
 foldLPat (L span p@(ListPat pats typ _)) = do
 #endif
@@ -1478,7 +1493,7 @@ foldLPat (L span p@(ListPat pats typ _)) = do
   mapM_ foldLPat pats
   return $ Just listType
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span pat@(TuplePat types pats boxity)) = do
+foldLPat (ghcDL -> L span pat@(TuplePat types pats boxity)) = do
 #else
 foldLPat (L span pat@(TuplePat pats boxity types)) = do
 #endif
@@ -1488,7 +1503,7 @@ foldLPat (L span pat@(TuplePat pats boxity types)) = do
   return $ Just typ'
 #if MIN_VERSION_GLASGOW_HASKELL(8,2,2,0)
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L _span (SumPat _ pat _ _)) = do
+foldLPat (ghcDL -> L _span (SumPat _ pat _ _)) = do
 #else
 foldLPat (L _span (SumPat pat _ _ _types)) = do
 #endif
@@ -1504,8 +1519,8 @@ foldLPat (L span pat@(PArrPat pats typ)) = do
   mapM_ foldLPat pats
   return $ Just typ'
 #endif
-foldLPat (L _span (ConPatIn _ _)) = return Nothing
-foldLPat (L span pat@ConPatOut {..}) = do
+foldLPat (ghcDL -> L _span (ConPatIn _ _)) = return Nothing
+foldLPat (ghcDL -> L span pat@ConPatOut {..}) = do
   let (L idSpan conLike) = pat_con
       conId =
         case conLike of
@@ -1519,18 +1534,18 @@ foldLPat (L span pat@ConPatOut {..}) = do
   _ <- foldHsConPatDetails pat_args
   return . Just . varType $ identifier'
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span p@(ViewPat typ expr pat)) = do
+foldLPat (ghcDL -> L span p@(ViewPat typ expr pat)) = do
 #else
-foldLPat (L span p@(ViewPat expr pat typ)) = do
+foldLPat (ghcDL -> L span p@(ViewPat expr pat typ)) = do
 #endif
   typ' <- tidyType typ
   addExprInfo span (Just typ') "ViewPat" (patSort p)
   _ <- foldLPat pat
   _ <- foldLHsExpr expr
   return $ Just typ'
-foldLPat (L _ SplicePat {}) = return Nothing
+foldLPat (ghcDL -> L _ SplicePat {}) = return Nothing
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span (LitPat _ hsLit)) = do
+foldLPat (ghcDL -> L span (LitPat _ hsLit)) = do
 #else
 foldLPat (L span (LitPat hsLit)) = do
 #endif
@@ -1544,7 +1559,7 @@ foldLPat (L span (LitPat hsLit)) = do
        else Composite)
   return $ Just typ'
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span pat@(NPat _ (L _spanLit (OverLit (OverLitTc {..}) _ _)) _ _)) = do
+foldLPat (ghcDL -> L span pat@(NPat _ (L _spanLit (OverLit (OverLitTc {..}) _ _)) _ _)) = do
 #else
 foldLPat (L span pat@(NPat (L _spanLit OverLit {ol_type}) _ _ _)) = do
 #endif
@@ -1552,7 +1567,7 @@ foldLPat (L span pat@(NPat (L _spanLit OverLit {ol_type}) _ _ _)) = do
   addExprInfo span (Just typ') "NPat" (patSort pat)
   return $ Just ol_type
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span pat@(NPlusKPat typ (L idSpan identifier) (L litSpan (OverLit (OverLitTc {..}) _ _)) _ _ _)) = do
+foldLPat (ghcDL -> L span pat@(NPlusKPat typ (L idSpan identifier) (L litSpan (OverLit (OverLitTc {..}) _ _)) _ _ _)) = do
 #else
 foldLPat (L span pat@(NPlusKPat (L idSpan identifier) (L litSpan OverLit {ol_type}) _ _ _ typ)) = do
 #endif
@@ -1569,7 +1584,12 @@ foldLPat (L span pat@(NPlusKPat (L idSpan identifier) (L litSpan OverLit {ol_typ
        then Simple
        else Composite)
   return $ Just typ'
-#if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
+foldLPat (ghcDL -> L _span (SigPat typ pat _)) = do 
+  typ' <- tidyType typ
+  _ <- foldLPat pat
+  return $ Just typ'
+#elif MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
 foldLPat (L _span (SigPat typ pat)) = do
   typ' <- tidyType typ
   _ <- foldLPat pat
@@ -1582,14 +1602,21 @@ foldLPat (L _span (SigPatOut pat typ)) = do
   return $ Just typ'
 #endif
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-foldLPat (L span p@(CoPat _ _ pat typ)) = do
+foldLPat (ghcDL -> L span p@(CoPat _ _ pat typ)) = do
 #else
 foldLPat (L span p@(CoPat _ pat typ)) = do
 #endif
   typ' <- tidyType typ
   addExprInfo span (Just typ') "CoPat" (patSort p)
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
+  _ <- foldLPat (cL span pat)
+#else
   _ <- foldLPat (L span pat)
+#endif
   return Nothing
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
+foldLPat _ = return Nothing
+#endif
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 foldHsConPatDetails

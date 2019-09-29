@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE StrictData #-}
 
 module HaskellCodeExplorer.AST.RenamedSource
@@ -80,7 +81,7 @@ import GHC
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
 import HsExtension (GhcRn)
 #endif
-import HaskellCodeExplorer.GhcUtils (hsPatSynDetails, ieLocNames)
+import HaskellCodeExplorer.GhcUtils (hsPatSynDetails, ieLocNames, ghcDL)
 import Prelude hiding (span)
 import TysWiredIn
   ( nilDataConName
@@ -367,7 +368,7 @@ patNames :: LPat GhcRn -> [NameOccurrence]
 patNames :: LPat Name -> [NameOccurrence]
 #endif
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-patNames (L _span (VarPat _ name)) =
+patNames (ghcDL -> (L _span (VarPat _ name))) =
 #else
 patNames (L _span (VarPat name)) =
 #endif
@@ -377,7 +378,7 @@ patNames (L _span (VarPat name)) =
     , isBinder = True
     }
   ]
-patNames (L _span (ConPatIn name _)) =
+patNames (ghcDL -> (L _span (ConPatIn name _))) =
   [ NameOccurrence
     { locatedName = Just <$> name
     , description = "ConPatIn"
@@ -385,7 +386,7 @@ patNames (L _span (ConPatIn name _)) =
     }
   ]
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-patNames (L _span (AsPat _ name _)) =
+patNames (ghcDL -> (L _span (AsPat _ name _))) =
 #else
 patNames (L _span (AsPat name _)) =
 #endif
@@ -396,7 +397,7 @@ patNames (L _span (AsPat name _)) =
     }
   ]
 #if MIN_VERSION_GLASGOW_HASKELL(8,6,1,0)
-patNames (L _span (NPlusKPat _ name _ _ _ _)) =
+patNames (ghcDL -> (L _span (NPlusKPat _ name _ _ _ _))) =
 #else
 patNames (L _span (NPlusKPat name _ _ _ _ _)) =
 #endif

@@ -25,6 +25,7 @@ module HaskellCodeExplorer.GhcUtils
   , hsGroupVals
   , hsPatSynDetails
   , ieLocNames
+  , ghcDL  
     -- * Lookups
   , lookupIdInTypeEnv
   , lookupNameModuleAndPackage
@@ -165,6 +166,11 @@ import GHC
   , tfe_pats
 #endif
   , tfid_eqn
+#if MIN_VERSION_ghc(8,8,0)
+  , dL
+  , HasSrcSpan
+  , SrcSpanLess 
+#endif
   )
 
 import qualified HaskellCodeExplorer.Types as HCE
@@ -1203,7 +1209,7 @@ isUserLSig (L _ ClassOpSig {}) = True
 isUserLSig _ = False
 
 #if MIN_VERSION_GLASGOW_HASKELL(8,4,3,0)
-getMainDeclBinder :: HsDecl pass -> [IdP pass]
+getMainDeclBinder :: HsDecl GhcRn -> [IdP GhcRn]
 #else
 getMainDeclBinder :: HsDecl name -> [name]
 #endif
@@ -1401,3 +1407,11 @@ makeAnchorId (f:r) = escape isAlpha f ++ concatMap (escape isLegal) r
     isLegal '_' = True
     isLegal '.' = True
     isLegal c = isAscii c && isAlphaNum c
+
+#if MIN_VERSION_ghc(8,8,0)
+ghcDL :: GHC.HasSrcSpan a => a -> GHC.Located (GHC.SrcSpanLess a)
+ghcDL = GHC.dL
+#else
+ghcDL :: GHC.Located a -> GHC.Located a
+ghcDL x = x
+#endif
