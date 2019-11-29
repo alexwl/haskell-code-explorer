@@ -1,44 +1,14 @@
-resolver: nightly-2019-09-28
+resolver: nightly-2019-11-29
 packages:
 - '.'
 - 'vendor/cabal-helper-0.8.1.2'
 allow-newer: true
 extra-deps:
-  - cabal-plan-0.4.0.0
-  - blaze-html-0.9.1.1@sha256:66f01bef8455b3387e592819584dbd5e501fe0bb5620a3bad80ca8f92d2b2296
+  - cabal-plan-0.4.0.0  
   - cabal-install-3.0.0.0@sha256:5e3c4376e53c06521cca2c037074423dbb967e228af6174bf842ff38aa82b035
   - haddock-library-1.7.0@sha256:8f230ebb680b559256d9c18ce4942ba5bf220b167804b4ebd5cc9e47cc4973cd
-  - servant-0.16.2@sha256:6c5d19d09a9dd2f2b2bf99193f944491f8374802678b79ec729e3f3ae51e216d
-  - servant-server-0.16.2@sha256:f6b36df7c4f1688ff9d48d272e6cfc5f001b3221d2a732e73faf44e8b9e1ea04
-  - wai-extra-3.0.28@sha256:6f3a8f9c750a4f4a1f03fef8e48413791a2268dfd1eedfb7b12c2b28ba6c7864
-  - warp-3.3.2@sha256:7bb7d6c913571ad03a9bf5dca1590f0fa343ba39092f10ba7f083aba0d59f777
   - wreq-0.5.3.2@sha256:eb1d848e983a1d1b8960c28840b55e56d8b3d760e9d014b5d9d018b13439e63f
-  - HTTP-4000.3.14@sha256:d4a96774226d2ea5011cb27a6c89fff848e541469e53b9cd9b3a9488afebf323
-  - authenticate-oauth-1.6@sha256:ba9e93e7b949fa4799ae7b3cb302df38dc7fb0be0460803b6c48636317b2bcbb
-  - blaze-markup-0.8.2.2@sha256:fda3582c37167b7b26a3e973f8501e0889041de01416add83c592cf03bbb7a47  
-  - http-client-tls-0.3.5.3@sha256:c97c3d88e6318a3056e42e2cd0913d5c4bff381f83341bb6ff06865fd12c8b52
-  - http-media-0.8.0.0@sha256:05215cafddb1a34cd70b3f1247953a753a4256a87228b68b8e748cdffa827363
-  - http2-2.0.3@sha256:c08885f0fd26ae035b169029b782cc693cc30e4d7a3b6f21a61de31085e8cfae
   - resolv-0.1.1.3@sha256:bb759a2d7367aad1ce61b3ba877cf64a200ebab4bc7e61cf71c9e879932ae348
-  - wai-app-static-3.1.6.3@sha256:a9015b84eb1aa2922c85a6ed70a105b0209e54e04f0004f5fa12ec68c39a1f07
-  - connection-0.3.1@sha256:65da1c055610095733bcd228d85dff80804b23a5d18fede994a0f9fcd1b0c121
-  - crypto-pubkey-types-0.4.3@sha256:9bcf9ec7045f1043edac2b8331d9120bc055083578dbd953a3cccfc7452d9e8c
-  - tls-1.5.1@sha256:a3dd34b10decece313f861247233b1d7c6058c99b32fb128554612fe3394e45a
-  - x509-1.7.5@sha256:01185a9a17bee4e89287d9e32bfaa673133cf2b09a39759627bed1f72ea528fd
-  - x509-store-1.6.7@sha256:a707b2f4ba3c02ebacd7ecd19e9f0c0b211b58270329c2c775a2c1df26820212
-  - x509-system-1.6.6@sha256:3a1b9cc26715d7cb3cd1a3f8b6153f12c2d42187ac5df305c3973c78a061db05
-  - x509-validation-1.6.11@sha256:7798c62717265a395f1092e6ad576f64b7876c289bb84353bddc0bb5a66c6b26  
-  - git: https://github.com/athas/hs-asn1.git
-    commit: cb054f8642e340138283ee73167cd494f531d67d
-    subdirs:
-      - data
-      - encoding
-      - parse
-      - types
-  - git: https://github.com/haskell-vanguard/hs-socks
-    commit: dcd853bfa7d29e7ec7df1dbc0eb5d93a3d43d83c
-  - git: https://github.com/ocharles/RSA
-    commit: bb712862c868975ab033e1079751d9e3787d3a33
   - git: https://github.com/haskell/hackage-security
     commit: 2057cdf2abba852881cd9d055c96f03cd8c829e7
     subdirs:
