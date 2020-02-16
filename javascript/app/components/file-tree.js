@@ -70,11 +70,11 @@ export default Ember.Component.extend({
         const node1 = this.get_node(a).data;
         const node2 = this.get_node(b).data;
         if(component.get("sortType") === "alphabetical") {
-          return node1.name > node2.name;
+          return node1.name.localeCompare(node2.name);
         } else {
           const extendedName1 = (node1.tag === "Dir" ? "0" : "1") + fileExtension(node1.name) + node1.name;
           const extendedName2 = (node2.tag === "Dir" ? "0" : "1") + fileExtension(node2.name) + node2.name;
-          return extendedName1 > extendedName2;
+          return extendedName1.localeCompare(extendedName2);
         }
       }
     });

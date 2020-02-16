@@ -42,7 +42,7 @@
     "ember-truth-helpers": "^2.0.0",
     "express": "^4.16.2",
     "glob": "^4.5.3",
-    "jstree": "3.3.5",
+    "jstree": "3.3.9",
     "loader.js": "^4.2.3",
     "morgan": "^1.9.0",
     "showdown": "^1.8.6"
