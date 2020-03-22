@@ -1,0 +1,12 @@
+resolver: lts-15.4
+packages:
+- '.'
+- 'vendor/cabal-helper-0.8.1.2'
+allow-newer: true
+extra-deps:
+  - haddock-library-1.7.0@sha256:8f230ebb680b559256d9c18ce4942ba5bf220b167804b4ebd5cc9e47cc4973cd
+  - cabal-install-3.0.0.0@sha256:5e3c4376e53c06521cca2c037074423dbb967e228af6174bf842ff38aa82b035
+  - git: https://github.com/haskell/hackage-security
+    commit: 2057cdf2abba852881cd9d055c96f03cd8c829e7
+    subdirs:
+      - hackage-security

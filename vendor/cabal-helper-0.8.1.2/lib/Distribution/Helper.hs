@@ -98,7 +98,7 @@ module Distribution.Helper (
   , module Data.Functor.Apply
   ) where
 
-import Cabal.Plan
+import Cabal.Plan hiding (findPlanJson)
 import Control.Applicative
 import Control.Monad
 import Control.Monad.IO.Class
