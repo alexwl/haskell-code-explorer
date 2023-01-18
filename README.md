@@ -48,12 +48,18 @@ cd haskell-code-explorer
 
 To build Haskell Code Explorer Stack ([https://docs.haskellstack.org/en/stable/README/](https://docs.haskellstack.org/en/stable/README/)) is needed.
 
-At the moment Haskell Code Explorer supports GHC 8.6.5, 8.6.4, GHC 8.6.3, GHC 8.4.4, GHC 8.4.3, GHC 8.2.2, and 8.0.2.
+At the moment Haskell Code Explorer supports GHC 8.8.3, GHC 8.6.5, 8.6.4, GHC 8.6.3, GHC 8.4.4, GHC 8.4.3, GHC 8.2.2, and 8.0.2.
+
+For GHC 8.8.3:
+
+```bash
+stack install
+```
 
 For GHC 8.6.5:
 
 ```bash
-stack install
+stack --stack-yaml=stack-8.6.5.yaml install
 ```
 
 For GHC 8.6.4:
